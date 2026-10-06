@@ -15,8 +15,9 @@ Claude：マスタCSV・3Dマップ・確認ページを更新してプッシュ
    - **連絡先**（記述式・任意）… 問い合わせが必要なとき用
 3. 右上の「送信」→ リンク（🔗）でURLをコピー（`https://docs.google.com/forms/d/e/…/viewform` か `https://forms.gle/…`）
 4. そのURLをClaudeに渡して「確認ページにフォームのURLを設定して」と頼む
-   （Claudeは `python3 tools/build_check_page.py 'フォームのURL'` を実行します。
-   確認ページ check.html と 3Dマップ index.html の両方の「フォームを開く」ボタンに設定されます）
+   （Claudeは `python3 tools/build_check_page.py 'フォームのURL'` を実行し、確認ページ check.html の「Googleフォームを開く」ボタンに設定します）
+
+報告の入口は確認ページ（check.html）に一本化しています。3Dマップ（index.html）で住棟や住宅を選ぶと、その住宅を開いた確認ページへのボタンが出ます。
 
 URLを設定するまでは、確認ページの「Googleフォームを開く」ボタンは表示されません（CSV保存は使えます）。
 
