@@ -1,0 +1,288 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>市営住宅 確認・報告</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+:root{--bg:#eef0f3;--panel:#fbfcfd;--ink:#1d2733;--muted:#5d6b7a;--line:#d3d9e0;--accent:#2f5d8a;
+ --cur:#f2c230;--pick:#2e9d63;--cand:#9aa3ad;--muni:#8fb3d9;--ptc:#d1006f;--ng:#c8463d;--add:#7a4fc2;
+ --font-ui:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;--font-num:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#141a21;--panel:#1e2731;--ink:#e6ebf0;--muted:#9aa8b6;--line:#33404d;--accent:#8db6e0;--add:#b493ea;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141a21;--panel:#1e2731;--ink:#e6ebf0;--muted:#9aa8b6;--line:#33404d;--accent:#8db6e0;--add:#b493ea;color-scheme:dark}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:13px;display:grid;grid-template-columns:290px 1fr 380px;overflow:hidden}
+aside{display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--line);background:var(--panel);min-height:0}
+.head{padding:14px 16px 10px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+h1{font-size:16px;margin:0;display:flex;align-items:center;gap:8px}
+h1 a{font-size:12px;font-weight:400;color:var(--accent);margin-left:auto}
+.sub{margin:0;color:var(--muted);font-size:12px;line-height:1.6}
+details.how{font-size:12px;line-height:1.6;color:var(--muted)}
+details.how summary{cursor:pointer;color:var(--accent);font-weight:700}
+details.how ol{margin:6px 0 0;padding-left:18px}
+.prog{display:flex;gap:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.prog b{font-family:var(--font-num);color:var(--ink)}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+select,input[type=text],input[type=search]{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);min-width:0}
+button{font:inherit;cursor:pointer}
+.btn{font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);text-decoration:none;display:inline-block}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:700}
+#list{list-style:none;margin:0;padding:0;overflow:auto;flex:1;min-height:0}
+#list button{width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:2px 8px}
+#list button:hover{background:var(--bg)}
+#list button[aria-current="true"]{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+#list .nm{font-weight:700;font-size:13px}
+#list .meta{grid-column:1/2;color:var(--muted);font-size:11.5px}
+.chip{grid-row:1/3;grid-column:2;align-self:center;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--pick);border-color:var(--pick);color:#fff}.chip.chg{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+main{position:relative;min-width:0;min-height:0}
+#map{position:absolute;inset:0}
+.leg{position:absolute;top:12px;left:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;display:flex;flex-direction:column;gap:4px;max-width:calc(100% - 80px)}
+.leg div{display:flex;gap:6px;align-items:center}.sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+.banner{position:absolute;left:50%;transform:translateX(-50%);bottom:24px;background:var(--ptc);color:#fff;font-weight:700;padding:8px 14px;border-radius:999px;font-size:12.5px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgb(0 0 0 / .2);white-space:nowrap}
+.banner button{border:1px solid #fff;background:transparent;color:#fff;border-radius:999px;padding:2px 10px;font-size:12px}
+.side2{display:flex;flex-direction:column;min-width:0;min-height:0;border-left:1px solid var(--line);background:var(--panel)}
+.side2 .top{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.side2 h2{font-size:16px;margin:0}
+.scroll{overflow:auto;flex:1;min-height:0;padding:6px;display:flex;flex-direction:column;gap:4px}
+.gl{font-size:11.5px;font-weight:700;color:var(--muted);margin:8px 4px 2px}
+.mem{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.mem li{border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:grid;grid-template-columns:auto 1fr auto;gap:3px 8px;align-items:center;cursor:pointer}
+.mem li[aria-current="true"]{border-color:var(--cur);box-shadow:0 0 0 2px color-mix(in srgb,var(--cur) 60%,transparent);cursor:default}
+.mem .no{font:700 12px var(--font-num);background:rgb(29 39 51 / .8);color:#fff;border-radius:999px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0 4px;box-sizing:border-box}
+.mem .no.add{background:var(--add)}
+.mem .nm{font-weight:700;font-size:12.5px}.mem .meta{grid-column:2/4;font-size:11px;color:var(--muted)}
+.mem .st{font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.mem .st.chg{background:var(--accent);border-color:var(--accent);color:var(--panel)}.mem .st.pt{background:var(--ptc);border-color:var(--ptc);color:#fff}.mem .st.gone{background:#555;border-color:#555;color:#fff}.mem .st.warn{border-color:var(--ng);color:var(--ng)}.mem .st.add{background:var(--add);border-color:var(--add);color:#fff}
+.acts{display:flex;gap:4px;flex-wrap:wrap;grid-column:1/4}
+.acts button{font-size:11.5px;padding:4px 8px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink)}
+.acts button.on{background:var(--ptc);border-color:var(--ptc);color:#fff}
+.acts button.gone.on{background:#555;border-color:#555}
+.mem li input[type=text]{grid-column:1/4;font-size:12px;padding:5px 7px}
+.addbtn{font-size:12.5px;padding:7px 10px;border:1px dashed var(--add);border-radius:8px;background:transparent;color:var(--add);font-weight:700;margin-top:2px}
+.bot{padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.okbtn{font-size:13px;padding:8px 12px;border-radius:7px;border:2px solid var(--pick);background:transparent;color:var(--pick);font-weight:700}
+.okbtn.on{background:var(--pick);color:#fff}
+.hint{font-size:12px;color:var(--accent);font-weight:700;margin:0}
+.out{position:fixed;inset:0;background:rgb(0 0 0 / .45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;box-sizing:border-box}
+.out>div{background:var(--panel);color:var(--ink);border-radius:10px;padding:16px;width:min(720px,100%);max-height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:10px}
+.out textarea{width:100%;box-sizing:border-box;height:240px;font-family:var(--font-num);font-size:11.5px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+.steps{margin:0;padding-left:20px;font-size:12.5px;line-height:1.7}
+.nlab{font:700 11px var(--font-num);color:#fff;background:rgb(29 39 51 / .78);border-radius:999px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.only-sp{display:none}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:1100px){body{grid-template-columns:250px 1fr 330px}}
+@media (max-width:760px){
+ body{grid-template-columns:1fr;grid-template-rows:48% 52%}
+ aside{position:fixed;inset:0;z-index:15;display:none;border-right:0}
+ aside.open{display:flex}
+ .only-sp{display:inline-block}
+ .side2{border-left:0;border-top:1px solid var(--line)}
+ .side2 .top{padding:8px 12px}
+ .leg{font-size:11px;padding:6px 8px;top:8px;left:8px}
+ .leg .more{display:none}
+}
+</style></head><body>
+<aside id="aside">
+ <div class="head">
+  <h1>確認・報告<a href="./">← 3Dマップへ</a><button class="btn only-sp" id="asideClose" type="button">閉じる</button></h1>
+  <p class="sub">住宅（団地）ごとに、3Dマップの建物が合っているかを確認して、違いを報告できるページです。</p>
+  <details class="how"><summary>使い方</summary><ol>
+   <li>住宅を選ぶと、号館の建物（黄色）と周りの建物（灰色）が出ます。</li>
+   <li>号館の建物が違うときは、右の一覧で号館を選び、地図の正しい建物をクリック（もう一度押すと外れます）。</li>
+   <li>解体されている号館は「解体済み」、一覧にない住棟は「＋一覧にない住棟を追加」。</li>
+   <li>違いがなければ「この住宅は問題なし」。</li>
+   <li>最後に「結果を出力」→ コピーして、Googleフォームに貼り付けて送信してください。</li>
+  </ol><p class="sub" style="margin-top:6px">入力はこのブラウザに自動保存されます（送信されるのはフォームに貼り付けた内容だけです）。</p></details>
+  <div class="prog"><span>確認した住宅 <b id="pDone">0</b> / <b id="pAll">0</b></span><span>報告する号館 <b id="pChg">0</b></span></div>
+  <input type="search" id="q" placeholder="住宅名・区で探す" aria-label="住宅名・区で探す">
+  <div class="row"><select id="fK" aria-label="区"><option value="">区：すべて</option></select><select id="fS" aria-label="状態"><option value="">状態：すべて</option><option value="none">未確認</option><option value="done">確認した住宅</option></select></div>
+  <div class="row"><button class="btn pri" id="exp" type="button">結果を出力して報告</button><button class="btn" id="reset" type="button">入力をすべて消す</button></div>
+  <p class="sub" id="resetAsk" hidden>入力をすべて消しますか？ <button class="btn" id="resetYes" type="button">消す</button> <button class="btn" id="resetNo" type="button">やめる</button></p>
+ </div>
+ <ul id="list"></ul>
+</aside>
+<main>
+ <div id="map"></div>
+ <div class="leg"><div><span class="sw" style="background:var(--cur)"></span>選んでいる号館の建物</div><div><span class="sw" style="background:var(--muni)"></span>この住宅のほかの号館</div><div class="more"><span class="sw" style="background:var(--cand);opacity:.7"></span>周りの建物（クリックで選んでいる号館に追加・解除）</div><div class="more"><span class="sw" style="background:var(--ptc);border-radius:50%"></span>建物なし（位置だけ）の号館</div></div>
+ <div class="banner" id="banner" hidden><span>地図で位置をクリック</span><button type="button" id="bnCancel">やめる</button></div>
+</main>
+<section class="side2">
+ <div class="top"><div class="row" style="justify-content:space-between"><span class="sub" id="eKu">–</span><button class="btn only-sp" id="asideOpen" type="button">住宅を選ぶ</button></div><h2 id="eName">–</h2><span class="sub" id="eInfo"></span>
+  <div class="row"><button class="btn" id="prev" type="button">← 前</button><button class="btn" id="next" type="button">次 →</button><a class="btn" id="gsi" target="_blank" rel="noopener">航空写真</a><a class="btn" id="gmap" target="_blank" rel="noopener">Googleマップ</a><button class="btn pri only-sp" id="exp2" type="button">結果を出力</button></div></div>
+ <div class="scroll">
+  <ul class="mem" id="mem"></ul>
+  <p class="gl" id="addLbl" hidden>一覧にない住棟（追加の報告）</p>
+  <ul class="mem" id="adds"></ul>
+  <button class="addbtn" id="addNew" type="button">＋ 一覧にない住棟を追加</button>
+ </div>
+ <div class="bot"><p class="hint" id="mode"></p><input type="text" id="memo" placeholder="この住宅についてのメモ（任意）" aria-label="この住宅についてのメモ"><button class="okbtn" id="done" type="button">この住宅は問題なし</button></div>
+</section>
+<div class="out" id="out" hidden><div>
+ <b style="font-size:15px">確認結果の報告</b>
+ <ol class="steps"><li>「コピー」を押す</li><li>「Googleフォームを開く」を押し、回答欄に貼り付けて送信</li><li>送信できたら「送信したので入力を消す」で、このブラウザの入力を片づけられます（残しておいてもかまいません）</li></ol>
+ <textarea id="outTxt" readonly aria-label="確認結果"></textarea>
+ <div class="row"><button class="btn pri" id="copy" type="button">1. コピー</button><a class="btn pri" id="form" target="_blank" rel="noopener">2. Googleフォームを開く</a><span class="sub" id="copyMsg"></span></div>
+ <div class="row"><button class="btn" id="save" type="button">CSVファイルで保存</button><button class="btn" id="sent" type="button">送信したので入力を消す</button><button class="btn" id="close" type="button">閉じる</button></div>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+// 報告の送り先（Googleフォームの「回答を送信するURL」。空のときはボタンを隠す）
+const FORM_URL='__FORM_URL__';
+const R=JSON.parse(document.getElementById('data').textContent),E=R.e;
+// 建物の復元（差分圧縮を戻す）
+const BF=R.b.map((b,i)=>{const f=b[3];let x=f[0],y=f[1];const ring=[[x/1e6,y/1e6]];for(let j=2;j<f.length;j+=2){x+=f[j];y+=f[j+1];ring.push([x/1e6,y/1e6])}
+ return {type:'Feature',id:i,properties:{bid:b[0],H:b[1],use:b[2]},geometry:{type:'Polygon',coordinates:[ring]}}});
+const BIX=new Map(BF.map((f,i)=>[f.properties.bid,i]));
+E.forEach(e=>e.mem.forEach(m=>m.bid=m.b.map(i=>BF[i].properties.bid)));
+const cen=bid=>{const r=BF[BIX.get(bid)].geometry.coordinates[0];return[r.reduce((a,c)=>a+c[0],0)/r.length,r.reduce((a,c)=>a+c[1],0)/r.length]};
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+// 入力の保存（建物はPLATEAU建物IDで持つので、データを更新しても入力は残る）
+const KEY='shiei-3d-check-v1';let S={est:{},mem:{},add:{}};try{S=Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const ek=e=>e.k+'|'+e.g,mk=(e,m)=>e.k+'|'+m.n;
+const est=e=>S.est[ek(e)]||(S.est[ek(e)]={});
+const adds=e=>S.add[ek(e)]||[];
+function mstate(e,m){const s=S.mem[mk(e,m)];return s?{b:s.b.filter(b=>BIX.has(b)),pt:s.pt||null,gone:!!s.gone,note:s.note||''}:{b:m.bid.slice(),pt:m.pt,gone:false,note:''}}
+function setm(e,m,s){S.mem[mk(e,m)]=s;if(!changed(e,m)&&!s.note)delete S.mem[mk(e,m)];save()}
+function changed(e,m){const s=S.mem[mk(e,m)];if(!s)return false;return [...s.b].sort().join()!==[...m.bid].sort().join()||!!s.gone||JSON.stringify(s.pt||null)!==JSON.stringify(m.pt||null)}
+const touched=(e,m)=>changed(e,m)||!!S.mem[mk(e,m)]?.note;
+const nChg=e=>e.mem.filter(m=>touched(e,m)).length+adds(e).length;
+const isDone=e=>!!S.est[ek(e)]?.ok||nChg(e)>0||!!S.est[ek(e)]?.memo;
+// 選択中：t='m'（一覧の号館）/'a'（追加した住棟）、i=番号
+let cur=0,sel={t:'m',i:0},mode='edit',view=E.map((_,i)=>i);
+[...new Set(E.map(e=>e.k))].forEach(k=>document.getElementById('fK').add(new Option(k,k)));
+const nz=s=>String(s||'').normalize('NFKC').replace(/\s+/g,'').replace(/ヶ|ケ|が/g,'ケ');
+function renderList(){const q=nz(document.getElementById('q').value),fk=document.getElementById('fK').value,fs=document.getElementById('fS').value;
+ view=E.map((_,i)=>i).filter(i=>{const e=E[i],d=isDone(e);return (!q||nz(e.g+e.k).includes(q))&&(!fk||e.k===fk)&&(!fs||(fs==='none'?!d:d))});
+ document.getElementById('list').innerHTML=view.map(i=>{const e=E[i],n=nChg(e),ok=S.est[ek(e)]?.ok;
+  return `<li><button type="button" data-i="${i}" aria-current="${i===cur}"><span class="nm">${esc(e.g)}</span><span class="chip ${n?'chg':ok?'ok':''}">${n?'報告 '+n:ok?'問題なし':'未確認'}</span><span class="meta">${esc(e.k)}・${e.mem.length}棟</span></button></li>`}).join('');
+ document.querySelectorAll('#list button').forEach(b=>b.onclick=()=>{go(+b.dataset.i);document.getElementById('aside').classList.remove('open')});
+ document.getElementById('pDone').textContent=E.filter(isDone).length;document.getElementById('pAll').textContent=E.length;
+ document.getElementById('pChg').textContent=E.reduce((a,e)=>a+nChg(e),0)}
+const map=new maplibregl.Map({container:'map',center:[135.5,34.67],zoom:16,pitch:0,bearing:0,maxPitch:75,attributionControl:false,
+ style:{version:8,sources:{gsi:{type:'raster',tiles:['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],tileSize:256,maxzoom:18,attribution:'地理院タイル（淡色地図）'},
+  photo:{type:'raster',tiles:['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],tileSize:256,maxzoom:18,attribution:'地理院タイル（全国最新写真）'}},
+ layers:[{id:'bg',type:'background',paint:{'background-color':css('--bg')}},{id:'gsi',type:'raster',source:'gsi',paint:{'raster-opacity':.55}},{id:'photo',type:'raster',source:'photo',layout:{visibility:'none'}}]}});
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+class BtnCtl{constructor(lab,fn){this.lab=lab;this.fn=fn}onAdd(m){const c=document.createElement('div');c.className='maplibregl-ctrl maplibregl-ctrl-group';const b=document.createElement('button');b.type='button';b.style.cssText='font:700 11px var(--font-ui);width:29px;height:29px;color:#333';b.title=this.lab[1];b.textContent=this.lab[0];b.onclick=()=>this.fn(b,m);c.appendChild(b);return c}onRemove(){}}
+map.addControl(new BtnCtl(['3D','2D/3Dの切り替え'],(b,m)=>{const to3=m.getPitch()<=5;m.easeTo(to3?{pitch:55}:{pitch:0,bearing:0});b.textContent=to3?'2D':'3D'}),'top-right');
+map.addControl(new BtnCtl(['写真','航空写真の切り替え'],(b,m)=>{const on=m.getLayoutProperty('photo','visibility')!=='visible';m.setLayoutProperty('photo','visibility',on?'visible':'none');m.setPaintProperty('cx','fill-extrusion-opacity',on?.6:.88);b.textContent=on?'地図':'写真'}),'top-right');
+map.addControl(new maplibregl.AttributionControl({compact:true,customAttribution:'PLATEAU（国土交通省）'}),'bottom-right');
+let marks=[];
+map.on('load',()=>{
+ map.addSource('c',{type:'geojson',data:{type:'FeatureCollection',features:BF}});
+ map.addSource('site',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+ map.addLayer({id:'site',type:'line',source:'site',paint:{'line-color':'#4b2e83','line-width':2,'line-dasharray':[2,1.2],'line-opacity':.8}});
+ map.addLayer({id:'cx',type:'fill-extrusion',source:'c',paint:{'fill-extrusion-color':css('--cand'),'fill-extrusion-height':['get','H'],'fill-extrusion-opacity':.88}});
+ map.addLayer({id:'cl',type:'line',source:'c',paint:{'line-color':css('--ink'),'line-width':0}});
+ map.on('click','cx',ev=>{if(mode!=='edit')return;ev.preventDefault();const bid=ev.features[0].properties.bid;const o=target();if(!o)return;
+  const k=o.s.b.indexOf(bid);k<0?o.s.b.push(bid):o.s.b.splice(k,1);if(o.s.b.length){o.s.pt=null;o.s.gone=false}o.put(o.s);draw(false)});
+ map.on('click',ev=>{if(mode!=='pt')return;const o=target();if(!o)return;o.s.pt=[+ev.lngLat.lng.toFixed(6),+ev.lngLat.lat.toFixed(6)];o.s.b=[];o.s.gone=false;o.put(o.s);setMode('edit')});
+ map.on('mousemove',ev=>{map.getCanvas().style.cursor=mode==='pt'?'crosshair':(map.queryRenderedFeatures(ev.point,{layers:['cx']}).length?'pointer':'')});
+ const p=new URLSearchParams(location.search),g=p.get('g'),k=p.get('k');
+ const i0=g?E.findIndex(e=>e.g===g&&(!k||e.k===k)):-1;go(i0<0?0:i0);
+});
+// 選択中の号館（または追加した住棟）の状態と、保存のしかた
+function target(){const e=E[cur];
+ if(sel.t==='a'){const a=adds(e)[sel.i];if(!a)return null;return {s:a,put:()=>{save()}}}
+ const m=e.mem[sel.i];if(!m)return null;const s=mstate(e,m);return {s,put:x=>setm(e,m,x)}}
+function setMode(m){mode=m;document.getElementById('banner').hidden=m!=='pt';draw(false)}
+document.getElementById('bnCancel').onclick=()=>setMode('edit');
+function draw(fly){
+ const e=E[cur];const sets=e.mem.map(m=>mstate(e,m)),ad=adds(e);
+ const all=[...sets.map((s,i)=>['m',i,s]),...ad.map((a,i)=>['a',i,a])];
+ const isSel=(t,i)=>t===sel.t&&i===sel.i;
+ const mine=all.filter(x=>isSel(x[0],x[1])).flatMap(x=>x[2].b).map(b=>BIX.get(b));
+ const others=all.filter(x=>!isSel(x[0],x[1])).flatMap(x=>x[2].b).map(b=>BIX.get(b));
+ if(map.getLayer('cx')){
+  map.setPaintProperty('cx','fill-extrusion-color',['case',['in',['id'],['literal',mine]],css('--cur'),['in',['id'],['literal',others]],css('--muni'),css('--cand')]);
+  map.setPaintProperty('cl','line-width',['case',['in',['id'],['literal',mine]],3,0]);
+  map.getSource('site').setData(e.site?{type:'Feature',properties:{},geometry:e.site}:{type:'FeatureCollection',features:[]});
+ }
+ marks.forEach(m=>m.remove());marks=[];
+ all.forEach(([t,i,s])=>{if(s.gone)return;let c=null;
+  if(s.b.length){const cs=s.b.map(cen);c=[cs.reduce((a,x)=>a+x[0],0)/cs.length,cs.reduce((a,x)=>a+x[1],0)/cs.length]}else if(s.pt)c=s.pt;if(!c)return;
+  const el=document.createElement('div');el.className='nlab';el.textContent=t==='a'?'+'+(i+1):(e.mem[i].no||'?');
+  if(t==='a')el.style.background=css('--add');else if(!s.b.length)el.style.background=css('--ptc');if(isSel(t,i))el.style.outline='2px solid '+css('--cur');
+  marks.push(new maplibregl.Marker({element:el}).setLngLat(c).addTo(map))});
+ document.getElementById('eKu').textContent=e.k;document.getElementById('eName').textContent=e.g;
+ document.getElementById('eInfo').textContent=`${e.mem.length}棟・${e.mem.reduce((a,m)=>a+(m.u||0),0).toLocaleString()}戸`;
+ const c=[(e.bb[0]+e.bb[2])/2,(e.bb[1]+e.bb[3])/2];
+ document.getElementById('gsi').href=`https://maps.gsi.go.jp/#17/${c[1].toFixed(6)}/${c[0].toFixed(6)}/&base=ort`;
+ document.getElementById('gmap').href=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('大阪市'+e.k+' 市営'+e.g)}`;
+ const cnt={};all.forEach(x=>x[2].b.forEach(b=>cnt[b]=(cnt[b]||0)+1));
+ const acts=(s,del)=>`<div class="acts"><button type="button" data-a="clear">建物をすべて外す</button><button type="button" data-a="pt" class="${mode==='pt'?'on':''}">位置だけ指定</button>${del?'<button type="button" data-a="del">この追加を取り消す</button>':`<button type="button" data-a="gone" class="gone ${s.gone?'on':''}">解体済み・見当たらない</button><button type="button" data-a="reset">元に戻す</button>`}</div>`;
+ document.getElementById('mem').innerHTML=e.mem.map((m,i)=>{const s=sets[i],ch=changed(e,m),shared=s.b.some(b=>cnt[b]>1),on=isSel('m',i);
+  const stt=s.gone?['gone','解体済み']:ch?(!s.b.length&&s.pt?['pt','位置を指定']:!s.b.length?['warn','建物なし']:['chg','建物を修正']):(!s.b.length?['pt','位置だけ']:['','そのまま']);
+  return `<li data-t="m" data-i="${i}" aria-current="${on}"><span class="no">${esc(m.no||'?')}</span><span class="nm">${esc(m.n.replace(e.g,'')||m.n)}</span><span class="st ${stt[0]}">${stt[1]}</span>
+   <span class="meta">${m.y||'–'}年度・${m.u||'–'}戸・建物${s.b.length}つ${shared?'・<b style="color:var(--ng)">他の号館と同じ建物</b>':''}${s.note&&!on?'・メモあり':''}</span>
+   ${on?acts(s,false)+`<input type="text" data-a="note" value="${esc(s.note)}" placeholder="この号館についてのメモ（任意）" aria-label="号館のメモ">`:''}</li>`}).join('');
+ document.getElementById('addLbl').hidden=!ad.length;
+ document.getElementById('adds').innerHTML=ad.map((a,i)=>{const on=isSel('a',i);
+  return `<li data-t="a" data-i="${i}" aria-current="${on}"><span class="no add">+${i+1}</span><span class="nm">${esc(a.name||'（名前未入力）')}</span><span class="st add">追加</span>
+   <span class="meta">${a.b.length?'建物'+a.b.length+'つ':a.pt?'位置を指定':'<b style="color:var(--ng)">地図で建物か位置を指定してください</b>'}</span>
+   ${on?`<input type="text" data-a="name" value="${esc(a.name)}" placeholder="住棟の名前（例：〇〇住宅５号館、わからなければ空欄）" aria-label="住棟の名前">`+acts(a,true)+`<input type="text" data-a="note" value="${esc(a.note)}" placeholder="メモ（例：2024年に完成した新しい棟）" aria-label="追加した住棟のメモ">`:''}</li>`}).join('');
+ document.querySelectorAll('.side2 .mem li').forEach(li=>{const t=li.dataset.t,i=+li.dataset.i;
+  li.onclick=ev=>{const a=ev.target.dataset.a;if(ev.target.tagName==='INPUT')return;
+   if(!a){if(!isSel(t,i)){sel={t,i};mode='edit';document.getElementById('banner').hidden=true;draw(false)}return}
+   const o=target();
+   if(a==='clear'){o.s.b=[];o.put(o.s)}else if(a==='pt'){setMode(mode==='pt'?'edit':'pt');return}
+   else if(a==='gone'){o.s.gone=!o.s.gone;if(o.s.gone){o.s.b=[];o.s.pt=null}o.put(o.s)}
+   else if(a==='reset'){delete S.mem[mk(e,e.mem[i])];save()}
+   else if(a==='del'){const l=adds(e);l.splice(i,1);if(!l.length)delete S.add[ek(e)];sel={t:'m',i:0};save()}
+   mode='edit';document.getElementById('banner').hidden=true;draw(false)};
+  li.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{const o=target();o.s[inp.dataset.a]=inp.value;o.put(o.s);renderList();
+   if(inp.dataset.a==='name')li.querySelector('.nm').textContent=inp.value||'（名前未入力）'})});
+ const tg=sel.t==='a'?'追加した住棟 +'+(sel.i+1):(e.mem[sel.i]?.n||'');
+ document.getElementById('mode').textContent=mode==='pt'?'地図で、この住棟の位置をクリックしてください':`編集中：${tg}（地図の建物をクリックで追加・解除）`;
+ const ok=!!S.est[ek(e)]?.ok;const b=document.getElementById('done');b.textContent=ok?'✓ 問題なしと確認済み（取り消す）':'この住宅は問題なし';b.classList.toggle('on',ok);
+ document.getElementById('memo').value=S.est[ek(e)]?.memo||'';
+ if(fly)map.fitBounds([[e.bb[0],e.bb[1]],[e.bb[2],e.bb[3]]],{padding:40,duration:500,pitch:map.getPitch(),bearing:map.getBearing()});
+ renderList();const a=document.querySelector('#list [aria-current="true"]');if(a)a.scrollIntoView({block:'nearest'});
+}
+function go(i){cur=Math.max(0,Math.min(E.length-1,i));sel={t:'m',i:0};mode='edit';document.getElementById('banner').hidden=true;draw(true);
+ const e=E[cur];history.replaceState(null,'','?k='+encodeURIComponent(e.k)+'&g='+encodeURIComponent(e.g))}
+function step(d){const p=view.indexOf(cur);const n=p<0?0:p+d;if(view[n]!=null)go(view[n])}
+document.getElementById('prev').onclick=()=>step(-1);document.getElementById('next').onclick=()=>step(1);
+document.getElementById('addNew').onclick=()=>{const e=E[cur];(S.add[ek(e)]=adds(e)).push({name:'',b:[],pt:null,note:''});save();sel={t:'a',i:S.add[ek(e)].length-1};mode='edit';draw(false);
+ const inp=document.querySelector('#adds li[aria-current="true"] input');if(inp)inp.focus()};
+document.getElementById('done').onclick=()=>{const e=E[cur],s=est(e);s.ok=!s.ok;if(!s.ok&&!s.memo)delete S.est[ek(e)];save();if(s.ok)step(1);else draw(false)};
+document.getElementById('memo').oninput=ev=>{const e=E[cur],s=est(e);s.memo=ev.target.value;if(!s.ok&&!s.memo)delete S.est[ek(e)];save();renderList()};
+document.getElementById('q').oninput=renderList;document.getElementById('fK').onchange=renderList;document.getElementById('fS').onchange=renderList;
+document.getElementById('asideOpen').onclick=()=>document.getElementById('aside').classList.add('open');
+document.getElementById('asideClose').onclick=()=>document.getElementById('aside').classList.remove('open');
+addEventListener('keydown',ev=>{if(['INPUT','TEXTAREA','SELECT'].includes(ev.target.tagName))return;
+ if(ev.key==='ArrowRight')step(1);else if(ev.key==='ArrowLeft')step(-1);else if(ev.key==='Escape')setMode('edit')});
+// ---- 出力 ----
+const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+function rows(){const out=[['区','住宅','住棟','報告の種類','PLATEAU建物ID','建物の中心緯度','建物の中心経度','位置_緯度','位置_経度','メモ']];
+ const geo=s=>{const cs=s.b.map(cen);return[s.b.join(' '),cs.map(c=>c[1].toFixed(6)).join(' '),cs.map(c=>c[0].toFixed(6)).join(' '),(!s.b.length&&s.pt)?s.pt[1]:'',(!s.b.length&&s.pt)?s.pt[0]:'']};
+ E.forEach(e=>{const es=S.est[ek(e)]||{},n=nChg(e);if(!es.ok&&!es.memo&&!n)return;
+  if(es.ok&&!n)out.push([e.k,e.g,'','問題なし','','','','','',es.memo||'']);
+  else if(es.memo)out.push([e.k,e.g,'','住宅へのメモ','','','','','',es.memo]);
+  e.mem.forEach(m=>{if(!touched(e,m))return;const s=mstate(e,m);
+   const kind=s.gone?'解体済み・見当たらない':!changed(e,m)?'メモのみ':s.b.length?'建物を修正':s.pt?'位置だけ指定':'建物なし';
+   out.push([e.k,e.g,m.n,kind,...(s.gone?['','','','','']:geo(s)),s.note||''])});
+  adds(e).forEach(a=>out.push([e.k,e.g,a.name||'（名前不明）','一覧にない住棟を追加',...geo(a),a.note||'']))});
+ return out}
+function csv(){const q=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};return rows().map(r=>r.map(q).join(',')).join('\n')}
+function report(){const r=rows();if(r.length<2)return '';
+ return `# 大阪市営住宅3Dマップ 確認結果\n# データ: ${R.v} / 出力: ${fmt(new Date())} / ${r.length-1}件\n`+csv()}
+document.getElementById('form').hidden=!FORM_URL;if(FORM_URL)document.getElementById('form').href=FORM_URL;
+const openOut=()=>{const t=report();document.getElementById('outTxt').value=t||'まだ報告する内容がありません。住宅を確認して「問題なし」や号館の修正を入力してください。';
+ document.getElementById('copy').disabled=!t;document.getElementById('out').hidden=false;
+ document.getElementById('copyMsg').textContent=FORM_URL?'':'（報告フォームは準備中です。CSVファイルで保存しておいてください）'};
+document.getElementById('exp').onclick=openOut;document.getElementById('exp2').onclick=openOut;
+document.getElementById('close').onclick=()=>document.getElementById('out').hidden=true;
+document.getElementById('copy').onclick=()=>{const t=document.getElementById('outTxt');navigator.clipboard.writeText(t.value).then(()=>document.getElementById('copyMsg').textContent='コピーしました。次にフォームを開いて貼り付けてください').catch(()=>{t.select();document.getElementById('copyMsg').textContent='選択しました。長押し（Ctrl+C）でコピーしてください'})};
+document.getElementById('save').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv()],{type:'text/csv'}));a.download='市営住宅3Dマップ_確認結果.csv';document.body.appendChild(a);a.click();a.remove()};
+const clearAll=()=>{S={est:{},mem:{},add:{}};save();sel={t:'m',i:0};draw(false)};
+document.getElementById('sent').onclick=()=>{clearAll();document.getElementById('out').hidden=true};
+document.getElementById('reset').onclick=()=>document.getElementById('resetAsk').hidden=false;
+document.getElementById('resetNo').onclick=()=>document.getElementById('resetAsk').hidden=true;
+document.getElementById('resetYes').onclick=()=>{clearAll();document.getElementById('resetAsk').hidden=true};
+</script>
+</body></html>
