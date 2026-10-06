@@ -146,7 +146,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <label class="chk"><input type="checkbox" id="exag">高さを3倍に強調（市域全体を見るとき）</label>
   </div>
   <div class="sec"><span class="lbl">誤りの報告</span><p class="note" style="margin:0">住棟や団地を選ぶと、右側の「誤りを報告」から記録できます。記録はこのブラウザに保存されます。</p>
-    <p class="note" style="margin:0"><a href="check.html" style="color:var(--sel-line);font-weight:700">確認・報告ページ</a>では、住宅ごとに号館の建物の付け替え・解体済み・一覧にない住棟の追加をまとめて報告できます。</p>
+    <p class="note" style="margin:0"><a href="check.html" style="color:var(--sel-line);font-weight:700">確認・報告ページ</a>では、住宅ごとに号館の建物の付け替え・解体済み・一覧にない住棟の追加、3Dモデルがない住棟の直方体モデルや敷地範囲の作成をまとめて報告できます。</p>
     <div class="row"><span>記録 <b id="repN" style="font-family:var(--font-num)">0</b> 件</span><button class="btn" id="repOut">CSVで出力</button><button class="btn" id="repList">一覧</button></div></div>
   <div class="sec detail" id="detail"><p class="empty">建物をクリックすると、画面右側に住宅名・建設年度・耐震性・活用手法などを表示します。</p></div>
   <div class="sec"><p class="note">建物形状・高さ：国土交通省 PLATEAU 大阪市（2024年度）。住棟一覧：大阪市「市営住宅一覧（位置情報付）R4.4.1」、「市営住宅ストック総合活用計画（別冊）R8.3」。築年数は2026年度時点。半透明の箱は、PLATEAUで建物を特定できなかった住棟（R4以降の新築など）を推定位置に仮の形・高さで置いたものです。敷地の点線は、同じ住宅名の住棟を囲んで描いた目安で、実際の敷地境界ではありません。背景地図：国土地理院「地理院タイル（淡色地図・全国最新写真〈シームレス〉）」。福島区・西区は市営住宅がないため灰色。浸水深はPLATEAUの災害リスク属性（洪水浸水想定区域〈想定最大規模・計画規模〉・高潮・津波）の最大値。階の目安は1階あたり2.9mとした概算。区界：国土数値情報（行政区域）をもとにしたGeoJSON（niiyz/JapanCityGeoJson）。</p></div>
@@ -292,7 +292,7 @@ function pick(f,src){
  const sib=est&&est.properties.nb>1?`<button type="button" class="x2" id="toEst" style="font:inherit;font-size:12.5px;border:0;background:none;color:var(--accent);cursor:pointer;padding:0;text-align:left;text-decoration:underline">${esc(p.g)}（${est.properties.nb}棟）のまとめを見る</button>`:'';
  show(`<span class="eyebrow">選択中の住棟</span><h2>${esc(p.n)}</h2><dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>${sib}
  <div class="links"><a href="https://maps.gsi.go.jp/#18/${p.lat}/${p.lon}/&base=ort" target="_blank" rel="noopener">地理院地図（航空写真）</a><a href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank" rel="noopener">Googleマップ</a></div>
- <button type="button" class="repbtn" id="repGo">このデータの誤りを報告</button><div id="repBox"></div>${chkLink(p.k,p.g)}`,p.lon,p.lat,p.n);
+ <button type="button" class="repbtn" id="repGo">このデータの誤りを報告</button><div id="repBox"></div>${chkLink(p.k,p.g,src==='p'?p.n:'')}`,p.lon,p.lat,p.n);
  repTarget={kind:'住棟',k:p.k,n:p.n,lat:p.lat,lon:p.lon};document.getElementById('repGo').onclick=openRep;
  const t=document.getElementById('toEst');if(t)t.onclick=()=>pickEstate(p.k,p.g);
 }
@@ -325,8 +325,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',retheme);
 new MutationObserver(retheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 // ---- 誤りの報告 ----
 // 報告の送り先（Googleフォーム。tools/build_check_page.py で設定）
-const FORM_URL='';
-const chkLink=(k,g)=>`<a class="note" style="color:var(--sel-line)" href="check.html?k=${encodeURIComponent(k)}&g=${encodeURIComponent(g)}">確認・報告ページで「${esc(g)}」を開く（建物の付け替え・解体・追加）</a>`;
+const FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLScGGzhssu_Ax0esjxqsZFrZebnoe-seR5kVGPS9JKaOQl3Xrw/viewform';
+const chkLink=(k,g,n)=>`<a class="note" style="color:var(--sel-line)${n?';font-weight:700':''}" href="check.html?k=${encodeURIComponent(k)}&g=${encodeURIComponent(g)}${n?'&n='+encodeURIComponent(n):''}">${n?'この住棟の3Dモデル（直方体）を作って報告する':`確認・報告ページで「${esc(g)}」を開く（建物の付け替え・解体・追加・3Dモデル・敷地）`}</a>`;
 const RKEY='shiei-3d-reports-v1';let REP=[];try{REP=JSON.parse(localStorage.getItem(RKEY)||'[]')}catch(e){}
 const rsave=()=>{try{localStorage.setItem(RKEY,JSON.stringify(REP))}catch(e){}document.getElementById('repN').textContent=REP.length};rsave();
 let repTarget=null,picking=false,pickLL=null,pickMk=null;
