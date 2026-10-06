@@ -55,6 +55,10 @@ main{position:relative;min-width:0;min-height:0}
 .mem .nm{font-weight:700;font-size:12.5px}.mem .meta{grid-column:2/4;font-size:11px;color:var(--muted)}
 .mem .st{font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .mem .st.chg{background:var(--accent);border-color:var(--accent);color:var(--panel)}.mem .st.pt{background:var(--ptc);border-color:var(--ptc);color:#fff}.mem .st.gone{background:#555;border-color:#555;color:#fff}.mem .st.warn{border-color:var(--ng);color:var(--ng)}.mem .st.mdl{background:var(--mdl);border-color:var(--mdl);color:#fff}.mem .st.nomdl{border-color:var(--mdl);color:var(--mdl)}
+.mem .st.rb{background:#8a5a00;border-color:#8a5a00;color:#fff}
+.rbsel{grid-column:1/4;display:flex;gap:4px;flex-wrap:wrap;align-items:center;font-size:11.5px}
+.rbsel button{font:700 11px var(--font-num);padding:2px 7px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink)}
+.rbsel button.on{background:#8a5a00;border-color:#8a5a00;color:#fff}
 .mem .st.add{background:var(--add);border-color:var(--add);color:#fff}
 .acts{display:flex;gap:4px;flex-wrap:wrap;grid-column:1/4}
 .acts button{font-size:11.5px;padding:4px 8px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink)}
@@ -103,6 +107,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
    <li>住宅を選ぶと、号館の建物（黄色）と周りの建物（灰色）が出ます。</li>
    <li>号館の建物が違うときは、右の一覧で号館を選び、地図の正しい建物をクリック（もう一度押すと外れます）。</li>
    <li>解体されている号館は「解体済み」、一覧にない住棟は「＋一覧にない住棟を追加」。</li>
+   <li>解体されて新しい住棟に建て替わっているときは、古い号館で「建て替え済み」を押し、新しい住棟の建物をクリック（PLATEAUになければ3Dモデルを描く）。2つの号館が1つにまとまったときは、新しい住棟の「建て替え前」で号館を追加で選べます。</li>
    <li>3Dモデルがない住棟（ピンクの点）は、号館を選んで「長方形で描く」で建物の範囲を描き、階高と階数を入れると直方体のモデルになります（長方形は角→となりの角→向かい側の辺の順に3回クリック）。</li>
    <li>住宅の敷地は、下の「敷地範囲」から描けます。建物と敷地はどちらか片方だけでもかまいません。</li>
    <li>違いがなければ「この住宅は問題なし」。</li>
@@ -126,7 +131,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
   <div class="row"><button class="btn" id="prev" type="button">← 前</button><button class="btn" id="next" type="button">次 →</button><a class="btn" id="gsi" target="_blank" rel="noopener">航空写真</a><a class="btn" id="gmap" target="_blank" rel="noopener">Googleマップ</a><button class="btn pri only-sp" id="exp2" type="button">結果を出力</button></div></div>
  <div class="scroll">
   <ul class="mem" id="mem"></ul>
-  <p class="gl" id="addLbl" hidden>一覧にない住棟（追加の報告）</p>
+  <p class="gl" id="addLbl" hidden>一覧にない住棟・建て替え後の住棟（追加の報告）</p>
   <ul class="mem" id="adds"></ul>
   <button class="addbtn" id="addNew" type="button">＋ 一覧にない住棟を追加</button>
  </div>
@@ -173,6 +178,14 @@ const tidyEst=e=>{const s=S.est[ek(e)];if(s&&!s.ok&&!s.memo&&!s.site)delete S.es
 const adds=e=>S.add[ek(e)]||[];
 function mstate(e,m){const s=S.mem[mk(e,m)];return s?{b:s.b.filter(b=>BIX.has(b)),pt:s.pt||null,gone:!!s.gone,note:s.note||'',shape:s.shape||null}:{b:m.bid.slice(),pt:m.pt,gone:false,note:'',shape:null}}
 function setm(e,m,s){S.mem[mk(e,m)]=s;if(!changed(e,m)&&!s.note&&!s.shape)delete S.mem[mk(e,m)];save()}
+// 建て替え：追加した住棟の from に、建て替え前の号館名を持つ
+const rbTo=(e,m)=>adds(e).map((a,i)=>[a,i]).filter(([a])=>(a.from||[]).includes(m.n));
+function setGone(e,m,on){const s=mstate(e,m);if(on){s.gone=true;s.b=[];s.pt=null;s.shape=null}else{s.gone=false;s.b=m.bid.slice();s.pt=m.pt}setm(e,m,s)}
+// 号館を建て替え前から外す（ほかの追加にも残っていなければ解体済みも戻す）
+function unlink(e,names){names.forEach(n=>{const m=e.mem.find(x=>x.n===n);if(m&&!rbTo(e,m).length)setGone(e,m,false)})}
+function cancelRb(e,m){adds(e).forEach(a=>{if(a.from)a.from=a.from.filter(n=>n!==m.n)});
+ const l=adds(e).filter(a=>a.from?.length||a.b.length||a.pt||a.shape||a.name||a.note);if(l.length)S.add[ek(e)]=l;else delete S.add[ek(e)];
+ setGone(e,m,false);sel={t:'m',i:e.mem.indexOf(m)}}
 function changed(e,m){const s=S.mem[mk(e,m)];if(!s)return false;return [...s.b].sort().join()!==[...m.bid].sort().join()||!!s.gone||JSON.stringify(s.pt||null)!==JSON.stringify(m.pt||null)}
 const touched=(e,m)=>changed(e,m)||!!S.mem[mk(e,m)]?.note||!!S.mem[mk(e,m)]?.shape;
 const nChg=e=>e.mem.filter(m=>touched(e,m)).length+adds(e).length+(S.est[ek(e)]?.site?1:0);
@@ -283,27 +296,33 @@ function draw(fly){
  document.getElementById('gsi').href=`https://maps.gsi.go.jp/#17/${c[1].toFixed(6)}/${c[0].toFixed(6)}/&base=ort`;
  document.getElementById('gmap').href=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('大阪市'+e.k+' 市営'+e.g)}`;
  const cnt={};all.forEach(x=>x[2].b.forEach(b=>cnt[b]=(cnt[b]||0)+1));
- const acts=(s,del)=>`<div class="acts"><button type="button" data-a="clear">建物をすべて外す</button><button type="button" data-a="pt" class="${mode==='pt'?'on':''}">位置だけ指定</button>${del?'<button type="button" data-a="del">この追加を取り消す</button>':`<button type="button" data-a="gone" class="gone ${s.gone?'on':''}">解体済み・見当たらない</button><button type="button" data-a="reset">元に戻す</button>`}</div>`;
+ const acts=(s,del,rb)=>rb?`<div class="acts"><button type="button" data-a="unrb">建て替えを取り消す</button></div>`:`<div class="acts"><button type="button" data-a="clear">建物をすべて外す</button><button type="button" data-a="pt" class="${mode==='pt'?'on':''}">位置だけ指定</button>${del?'<button type="button" data-a="del">この追加を取り消す</button>':`<button type="button" data-a="gone" class="gone ${s.gone?'on':''}">解体済み・見当たらない</button>${s.gone?'':'<button type="button" data-a="rebuild">建て替え済み</button>'}<button type="button" data-a="reset">元に戻す</button>`}</div>`;
  document.getElementById('mem').innerHTML=e.mem.map((m,i)=>{const s=sets[i],ch=changed(e,m),shared=s.b.some(b=>cnt[b]>1),on=isSel('m',i);
-  const stt=s.gone?['gone','解体済み']:s.shape?['mdl','3Dモデルを作成']:ch?(!s.b.length&&s.pt?['pt','位置を指定']:!s.b.length?['warn','建物なし']:['chg','建物を修正']):(!s.b.length?['nomdl','3Dモデルなし']:['','そのまま']);
+  const rb=rbTo(e,m);
+  const stt=rb.length?['rb','建て替え']:s.gone?['gone','解体済み']:s.shape?['mdl','3Dモデルを作成']:ch?(!s.b.length&&s.pt?['pt','位置を指定']:!s.b.length?['warn','建物なし']:['chg','建物を修正']):(!s.b.length?['nomdl','3Dモデルなし']:['','そのまま']);
   return `<li data-t="m" data-i="${i}" aria-current="${on}"><span class="no">${esc(m.no||'?')}</span><span class="nm">${esc(m.n.replace(e.g,'')||m.n)}</span><span class="st ${stt[0]}">${stt[1]}</span>
-   <span class="meta">${m.y||'–'}年度・${m.u||'–'}戸・${s.b.length?'建物'+s.b.length+'つ':'PLATEAUに建物なし'}${shared?'・<b style="color:var(--ng)">他の号館と同じ建物</b>':''}${s.note&&!on?'・メモあり':''}</span>
-   ${on?acts(s,false)+(s.gone?'':mdlBox(s))+`<input type="text" data-a="note" value="${esc(s.note)}" placeholder="この号館についてのメモ（任意）" aria-label="号館のメモ">`:''}</li>`}).join('');
+   <span class="meta">${m.y||'–'}年度・${m.u||'–'}戸・${s.b.length?'建物'+s.b.length+'つ':'PLATEAUに建物なし'}${shared?'・<b style="color:var(--ng)">他の号館と同じ建物</b>':''}${rb.length?'・<b>'+rb.map(([,j])=>'+'+(j+1)).join('、')+' に建て替え</b>':''}${s.note&&!on?'・メモあり':''}</span>
+   ${on?acts(s,false,rb.length>0)+(s.gone?'':mdlBox(s))+`<input type="text" data-a="note" value="${esc(s.note)}" placeholder="この号館についてのメモ（任意）" aria-label="号館のメモ">`:''}</li>`}).join('');
  document.getElementById('addLbl').hidden=!ad.length;
  document.getElementById('adds').innerHTML=ad.map((a,i)=>{const on=isSel('a',i);
-  return `<li data-t="a" data-i="${i}" aria-current="${on}"><span class="no add">+${i+1}</span><span class="nm">${esc(a.name||'（名前未入力）')}</span><span class="st add">追加</span>
-   <span class="meta">${a.b.length?'建物'+a.b.length+'つ':a.shape?'3Dモデルを作成':a.pt?'位置を指定':'<b style="color:var(--ng)">地図で建物・位置を指定するか、3Dモデルを描いてください</b>'}</span>
-   ${on?`<input type="text" data-a="name" value="${esc(a.name)}" placeholder="住棟の名前（例：〇〇住宅５号館、わからなければ空欄）" aria-label="住棟の名前">`+acts(a,true)+mdlBox(a)+`<input type="text" data-a="note" value="${esc(a.note)}" placeholder="メモ（例：2024年に完成した新しい棟）" aria-label="追加した住棟のメモ">`:''}</li>`}).join('');
+  const fr=a.from||[];
+  return `<li data-t="a" data-i="${i}" aria-current="${on}"><span class="no add">+${i+1}</span><span class="nm">${esc(a.name||'（名前未入力）')}</span><span class="st ${fr.length?'rb':'add'}">${fr.length?'建て替え後':'追加'}</span>
+   <span class="meta">${fr.length?'建て替え前：'+esc(fr.map(n=>n.replace(e.g,'')).join('・'))+'・':''}${a.b.length?'建物'+a.b.length+'つ':a.shape?'3Dモデルを作成':a.pt?'位置を指定':'<b style="color:var(--ng)">地図で建物・位置を指定するか、3Dモデルを描いてください</b>'}</span>
+   ${on?`<input type="text" data-a="name" value="${esc(a.name)}" placeholder="住棟の名前（例：〇〇住宅５号館、わからなければ空欄）" aria-label="住棟の名前">`+(fr.length?`<div class="rbsel">建て替え前：${e.mem.map(m=>`<button type="button" data-rb="${esc(m.n)}" class="${fr.includes(m.n)?'on':''}" title="${esc(m.n)}">${esc(m.no||'?')}</button>`).join('')}</div>`:'')+acts(a,true)+mdlBox(a)+`<input type="text" data-a="note" value="${esc(a.note)}" placeholder="メモ（例：2024年に完成した新しい棟）" aria-label="追加した住棟のメモ">`:''}</li>`}).join('');
  document.querySelectorAll('.side2 .mem li').forEach(li=>{const t=li.dataset.t,i=+li.dataset.i;
   li.onclick=ev=>{const a=ev.target.dataset.a;if(ev.target.tagName==='INPUT')return;
+   const rn=ev.target.dataset.rb;if(rn!=null){const ad=adds(e)[i],m=e.mem.find(x=>x.n===rn),k=ad.from.indexOf(rn);
+    if(k<0){ad.from.push(rn);setGone(e,m,true)}else if(ad.from.length>1){ad.from.splice(k,1);unlink(e,[rn])}save();draw(false);return}
    if(!a){if(!isSel(t,i)){sel={t,i};if(mode==='draw')endDraw();else{mode='edit';draw(false)}}return}
    const o=target();
    if(a==='clear'){o.s.b=[];o.put(o.s)}else if(a==='pt'){if(mode==='draw')DR=null;setMode(mode==='pt'?'edit':'pt');return}
    else if(a==='drect'||a==='dpoly'){const how=a==='drect'?'rect':'poly';if(mode==='draw'&&DR.kind==='bld'&&DR.how===how)endDraw();else startDraw('bld',how);return}
    else if(a==='ddel'){o.s.shape=null;o.put(o.s)}
    else if(a==='gone'){o.s.gone=!o.s.gone;if(o.s.gone){o.s.b=[];o.s.pt=null;o.s.shape=null}o.put(o.s)}
-   else if(a==='reset'){delete S.mem[mk(e,e.mem[i])];save()}
-   else if(a==='del'){const l=adds(e);l.splice(i,1);if(!l.length)delete S.add[ek(e)];sel={t:'m',i:0};save()}
+   else if(a==='reset'){const m=e.mem[i];if(rbTo(e,m).length)cancelRb(e,m);delete S.mem[mk(e,m)];save()}
+   else if(a==='unrb'){cancelRb(e,e.mem[i]);save()}
+   else if(a==='rebuild'){const m=e.mem[i];setGone(e,m,true);(S.add[ek(e)]=adds(e)).push({name:'',from:[m.n],b:[],pt:null,note:'',shape:null});sel={t:'a',i:S.add[ek(e)].length-1};save()}
+   else if(a==='del'){const l=adds(e),fr=l[i].from||[];l.splice(i,1);if(!l.length)delete S.add[ek(e)];unlink(e,fr);sel={t:'m',i:0};save()}
    if(mode==='draw')endDraw();else{mode='edit';draw(false)}};
   li.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{const o=target(),a=inp.dataset.a;
    if(a==='fh'||a==='fl'){o.s.shape[a]=inp.value;o.put(o.s);userShapes(e,e.mem.map(m=>mstate(e,m)),adds(e));li.querySelector('[data-k="hinfo"]').innerHTML=hInfo(o.s.shape);return}
@@ -350,10 +369,12 @@ function rows(){const out=[['区','住宅','住棟','報告の種類','PLATEAU�
   else if(es.memo)out.push([e.k,e.g,'','住宅へのメモ',...blank(9),es.memo]);
   if(es.site)out.push([e.k,e.g,'','敷地範囲',...blank(8),ringTxt(es.site),'']);
   e.mem.forEach(m=>{if(!touched(e,m))return;const s=mstate(e,m),ch=changed(e,m);
+   const rb=rbTo(e,m),rbNote=rb.length?'建て替え後：'+rb.map(([a,j])=>a.name||'（名前不明 +'+(j+1)+'）').join('・')+(s.note?'／'+s.note:''):'';
+   if(rb.length){out.push([e.k,e.g,m.n,'建て替え前（解体）',...blank(9),rbNote]);return}
    if(ch||(s.note&&!s.shape)){const kind=s.gone?'解体済み・見当たらない':!ch?'メモのみ':s.b.length?'建物を修正':s.pt?'位置だけ指定':'建物なし';
     out.push([e.k,e.g,m.n,kind,...(s.gone?blank(5):geo(s)),...blank(4),s.shape?'':s.note||''])}
    if(s.shape)out.push([e.k,e.g,m.n,'3Dモデル（建物範囲）',...blank(5),...mdl(s.shape),s.note||''])});
-  adds(e).forEach(a=>out.push([e.k,e.g,a.name||'（名前不明）','一覧にない住棟を追加',...geo(a),...mdl(a.shape),a.note||'']))});
+  adds(e).forEach((a,j)=>{const fr=a.from||[];out.push([e.k,e.g,a.name||'（名前不明 +'+(j+1)+'）',fr.length?'建て替え後（新しい住棟）':'一覧にない住棟を追加',...geo(a),...mdl(a.shape),fr.length?'建て替え前：'+fr.join('・')+(a.note?'／'+a.note:''):a.note||''])})});
  return out}
 function csv(){const q=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};return rows().map(r=>r.map(q).join(',')).join('\n')}
 function report(){const r=rows();if(r.length<2)return '';
