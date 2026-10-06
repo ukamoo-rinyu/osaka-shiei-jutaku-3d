@@ -72,6 +72,8 @@ main{position:relative;min-width:0;min-height:0}
 .addbtn{font-size:12.5px;padding:7px 10px;border:1px dashed var(--add);border-radius:8px;background:transparent;color:var(--add);font-weight:700;margin-top:2px}
 .bot{padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
 .mdlbox{grid-column:1/4;border-top:1px dashed var(--line);padding-top:5px;margin-top:2px;display:flex;flex-direction:column;gap:4px;font-size:11.5px}
+.mdlbox .part{border:1px solid var(--line);border-radius:6px;padding:4px 6px;display:flex;flex-direction:column;gap:3px}
+.mdlbox .pno{font:700 11px var(--font-num);background:var(--add);color:#fff;border-radius:4px;padding:1px 6px}
 .mdlbox b{font-size:11.5px}.mdlbox .row{gap:4px}
 .mdlbox input[type=number],.bot input[type=number]{font:inherit;font-size:12px;width:58px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink)}
 .sbtn{font-size:11.5px;padding:4px 8px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink)}
@@ -179,23 +181,26 @@ const ringTxt=r=>r.map(p=>p[0].toFixed(7)+' '+p[1].toFixed(7)).join(';');
 const hOf=sh=>{const fh=+sh.fh||FH,fl=+sh.fl;return fl>0?+(fh*fl).toFixed(1):null};
 // 入力の保存（建物はPLATEAU建物IDで持つので、データを更新しても入力は残る）
 const KEY='shiei-3d-check-v1';let S={est:{},mem:{},add:{}};try{S=Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+// 3Dモデルは箱（shapes）のリスト。以前の形（shape 1つ）で保存された入力も読み替える
+[...Object.values(S.mem),...Object.values(S.add).flat()].forEach(x=>{if(x&&x.shape&&!x.shapes)x.shapes=[x.shape];if(x)delete x.shape});
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const shs=s=>s.shapes||[];
 const ek=e=>e.k+'|'+e.g,mk=(e,m)=>e.k+'|'+m.n;
 const est=e=>S.est[ek(e)]||(S.est[ek(e)]={});
 const tidyEst=e=>{const s=S.est[ek(e)];if(s&&!s.ok&&!s.memo&&!s.site)delete S.est[ek(e)]};
 const adds=e=>S.add[ek(e)]||[];
-function mstate(e,m){const s=S.mem[mk(e,m)];return s?{b:s.b.filter(b=>BIX.has(b)),pt:s.pt||null,gone:!!s.gone,note:s.note||'',shape:s.shape||null}:{b:m.bid.slice(),pt:m.pt,gone:false,note:'',shape:null}}
-function setm(e,m,s){S.mem[mk(e,m)]=s;if(!changed(e,m)&&!s.note&&!s.shape)delete S.mem[mk(e,m)];save()}
+function mstate(e,m){const s=S.mem[mk(e,m)];return s?{b:s.b.filter(b=>BIX.has(b)),pt:s.pt||null,gone:!!s.gone,note:s.note||'',shapes:s.shapes||[]}:{b:m.bid.slice(),pt:m.pt,gone:false,note:'',shapes:[]}}
+function setm(e,m,s){S.mem[mk(e,m)]=s;if(!changed(e,m)&&!s.note&&!shs(s).length)delete S.mem[mk(e,m)];save()}
 // 建て替え：追加した住棟の from に、建て替え前の号館名を持つ
 const rbTo=(e,m)=>adds(e).map((a,i)=>[a,i]).filter(([a])=>(a.from||[]).includes(m.n));
-function setGone(e,m,on){const s=mstate(e,m);if(on){s.gone=true;s.b=[];s.pt=null;s.shape=null}else{s.gone=false;s.b=m.bid.slice();s.pt=m.pt}setm(e,m,s)}
+function setGone(e,m,on){const s=mstate(e,m);if(on){s.gone=true;s.b=[];s.pt=null;s.shapes=[]}else{s.gone=false;s.b=m.bid.slice();s.pt=m.pt}setm(e,m,s)}
 // 号館を建て替え前から外す（ほかの追加にも残っていなければ解体済みも戻す）
 function unlink(e,names){names.forEach(n=>{const m=e.mem.find(x=>x.n===n);if(m&&!rbTo(e,m).length)setGone(e,m,false)})}
 function cancelRb(e,m){adds(e).forEach(a=>{if(a.from)a.from=a.from.filter(n=>n!==m.n)});
- const l=adds(e).filter(a=>a.from?.length||a.b.length||a.pt||a.shape||a.name||a.note);if(l.length)S.add[ek(e)]=l;else delete S.add[ek(e)];
+ const l=adds(e).filter(a=>a.from?.length||a.b.length||a.pt||shs(a).length||a.name||a.note);if(l.length)S.add[ek(e)]=l;else delete S.add[ek(e)];
  setGone(e,m,false);sel={t:'m',i:e.mem.indexOf(m)}}
 function changed(e,m){const s=S.mem[mk(e,m)];if(!s)return false;return [...s.b].sort().join()!==[...m.bid].sort().join()||!!s.gone||JSON.stringify(s.pt||null)!==JSON.stringify(m.pt||null)}
-const touched=(e,m)=>changed(e,m)||!!S.mem[mk(e,m)]?.note||!!S.mem[mk(e,m)]?.shape;
+const touched=(e,m)=>changed(e,m)||!!S.mem[mk(e,m)]?.note||!!S.mem[mk(e,m)]?.shapes?.length;
 const nChg=e=>e.mem.filter(m=>touched(e,m)).length+adds(e).length+(S.est[ek(e)]?.site?1:0);
 const isDone=e=>!!S.est[ek(e)]?.ok||nChg(e)>0||!!S.est[ek(e)]?.memo;
 // 選択中：t='m'（一覧の号館）/'a'（追加した住棟）、i=番号
@@ -220,8 +225,8 @@ map.addControl(new BtnCtl(['3D','2D/3Dの切り替え'],(b,m)=>{const to3=m.getP
 // 背景地図の切り替え（地図／航空写真）。選んだほうはこのブラウザに覚えておく
 function setBase(v){const ph=v==='photo';
  document.querySelectorAll('[data-bm]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.bm===v));
- const ap=()=>{map.setLayoutProperty('photo','visibility',ph?'visible':'none');map.setLayoutProperty('gsi','visibility',ph?'none':'visible');map.setPaintProperty('cx','fill-extrusion-opacity',ph?.6:.88)};
- map.getLayer('cx')?ap():map.once('load',ap);try{localStorage.setItem('shiei-3d-check-base',v)}catch(e){}}
+ const ap=()=>{map.setLayoutProperty('photo','visibility',ph?'visible':'none');map.setLayoutProperty('gsi','visibility',ph?'none':'visible');};
+ map.getLayer('cx')?(ap(),fade()):map.once('load',ap);try{localStorage.setItem('shiei-3d-check-base',v)}catch(e){}}
 document.querySelectorAll('[data-bm]').forEach(b=>b.onclick=()=>setBase(b.dataset.bm));
 map.addControl(new maplibregl.AttributionControl({compact:true,customAttribution:'PLATEAU（国土交通省）'}),'bottom-right');
 const FC=f=>({type:'FeatureCollection',features:f});
@@ -258,10 +263,14 @@ function target(){const e=E[cur];
  if(sel.t==='a'){const a=adds(e)[sel.i];if(!a)return null;return {s:a,put:()=>{save()}}}
  const m=e.mem[sel.i];if(!m)return null;const s=mstate(e,m);return {s,put:x=>setm(e,m,x)}}
 // ---- 範囲を描く ----
-function startDraw(kind,how){mode='draw';DR={kind,how,pts:[],hover:null};map.doubleClickZoom.disable();sketch();draw(false)}
-function endDraw(){DR=null;mode='edit';map.doubleClickZoom.enable();sketch();draw(false)}
+// 描いている間は、ほかの建物とモデルを薄くして下の地図を見やすくする
+function fade(){if(!map.getLayer('cx'))return;const d=mode==='draw',ph=map.getLayoutProperty('photo','visibility')==='visible';
+ map.setPaintProperty('cx','fill-extrusion-opacity',d?.3:ph?.6:.88);map.setPaintProperty('ux','fill-extrusion-opacity',d?.35:.9)}
+// pi：描き直す箱の番号（新しい箱を足すときは null）
+function startDraw(kind,how,pi=null){mode='draw';DR={kind,how,pi,pts:[],hover:null};map.doubleClickZoom.disable();sketch();fade();draw(false)}
+function endDraw(){DR=null;mode='edit';map.doubleClickZoom.enable();sketch();fade();draw(false)}
 function finishDraw(){const r=DR.how==='rect'?rectOf(...DR.pts):DR.pts.slice();if(r.length<3)return;const e=E[cur];
- if(DR.kind==='site'){est(e).site=r;save()}else{const o=target();if(o){o.s.shape={ring:r,fh:o.s.shape?.fh??FH,fl:o.s.shape?.fl??''};o.put(o.s)}}
+ if(DR.kind==='site'){est(e).site=r;save()}else{const o=target();if(o){const l=o.s.shapes=shs(o.s),old=l[DR.pi];if(old){old.ring=r;old.how=DR.how}else l.push({ring:r,how:DR.how,fh:l.length?l[l.length-1].fh:FH,fl:''});o.put(o.s)}}
  endDraw()}
 function sketch(){const src=map.getSource('sk');if(!src)return;if(!DR){src.setData(FC([]));return}
  const ps=DR.hover?[...DR.pts,DR.hover]:DR.pts,f=ps.map(p=>({type:'Feature',properties:{},geometry:{type:'Point',coordinates:p}}));
@@ -277,14 +286,17 @@ function banner(){const b=document.getElementById('banner');b.classList.toggle('
  b.querySelectorAll('button').forEach(x=>x.onclick=()=>{const a=x.dataset.b;if(a==='x'){mode==='draw'?endDraw():setMode('edit')}else if(a==='back'){DR.pts.pop();sketch();banner()}else if(a==='ok')finishDraw()})}
 function setMode(m){mode=m;draw(false)}
 function userShapes(e,sets,ad){const f=[];const site=S.est[ek(e)]?.site;
- if(site)f.push({type:'Feature',properties:{t:'site'},geometry:{type:'Polygon',coordinates:[closed(site)]}});
- [...sets.map((s,i)=>['m',i,s]),...ad.map((a,i)=>['a',i,a])].forEach(([t,i,s])=>{if(!s.shape||s.gone)return;
-  f.push({type:'Feature',properties:{t:'bld',H:hOf(s.shape)??3,sel:t===sel.t&&i===sel.i},geometry:{type:'Polygon',coordinates:[closed(s.shape.ring)]}})});
+ const dr=mode==='draw'?DR:null;
+ if(site&&dr?.kind!=='site')f.push({type:'Feature',properties:{t:'site'},geometry:{type:'Polygon',coordinates:[closed(site)]}});
+ [...sets.map((s,i)=>['m',i,s]),...ad.map((a,i)=>['a',i,a])].forEach(([t,i,s])=>{if(s.gone)return;const on=t===sel.t&&i===sel.i;
+  shs(s).forEach((sh,k)=>{if(on&&dr?.kind==='bld'&&dr.pi===k)return;
+   f.push({type:'Feature',properties:{t:'bld',H:hOf(sh)??3,sel:on},geometry:{type:'Polygon',coordinates:[closed(sh.ring)]}})})});
  map.getSource('usr')?.setData(FC(f))}
-const mdlBox=s=>{const sh=s.shape,on=mode==='draw'&&DR.kind==='bld';
- return `<div class="mdlbox"><div class="row"><b>3Dモデル（直方体）</b><button type="button" class="sbtn ${on&&DR.how==='rect'?'on':''}" data-a="drect">${sh?'長方形で描き直す':'長方形で描く'}</button><button type="button" class="sbtn ${on&&DR.how==='poly'?'on':''}" data-a="dpoly">多角形で描く</button>${sh?'<button type="button" class="sbtn" data-a="ddel">モデルを消す</button>':''}</div>
- ${sh?`<div class="row">階高 <input type="number" data-a="fh" value="${esc(sh.fh)}" min="2" max="6" step="0.1" aria-label="階高"> m × 階数 <input type="number" data-a="fl" value="${esc(sh.fl)}" min="1" max="60" step="1" aria-label="階数"> 階</div>
- <div class="row" data-k="hinfo">${hInfo(sh)}</div>`:'<span class="sub">地図に建物の範囲を描くと、階高×階数の高さで立ち上げます</span>'}</div>`};
+const mdlBox=s=>{const l=shs(s),dr=mode==='draw'&&DR.kind==='bld'?DR:null,n=l.length;
+ return `<div class="mdlbox"><b>3Dモデル（直方体）</b>${l.map((sh,k)=>`<div class="part"><div class="row"><span class="pno">箱${k+1}</span>階高 <input type="number" data-a="fh" data-pi="${k}" value="${esc(sh.fh)}" min="2" max="6" step="0.1" aria-label="箱${k+1}の階高"> m × <input type="number" data-a="fl" data-pi="${k}" value="${esc(sh.fl)}" min="1" max="60" step="1" aria-label="箱${k+1}の階数"> 階</div>
+ <div class="row"><span class="sub" data-k="hinfo${k}">${hInfo(sh)}</span><button type="button" class="sbtn ${dr&&dr.pi===k?'on':''}" data-a="dredo" data-pi="${k}">描き直す</button><button type="button" class="sbtn" data-a="ddel" data-pi="${k}">消す</button></div></div>`).join('')}
+ <div class="row"><button type="button" class="sbtn ${dr&&dr.pi==null&&dr.how==='rect'?'on':''}" data-a="drect">${n?'＋長方形で箱を追加':'長方形で描く'}</button><button type="button" class="sbtn ${dr&&dr.pi==null&&dr.how==='poly'?'on':''}" data-a="dpoly">${n?'＋多角形で箱を追加':'多角形で描く'}</button></div>
+ <span class="sub">${n?'高さが違う部分や、つながった別の棟は、箱を分けて描けます':'地図に建物の範囲を描くと、階高×階数の高さで立ち上げます'}</span></div>`};
 const hInfo=sh=>{const h=hOf(sh);return `${h?'高さ 約'+h+' m':'<span class="warn">階数を入れてください</span>'}・建築面積 約${Math.round(area(sh.ring)).toLocaleString()} m²`};
 function draw(fly){
  const e=E[cur];const sets=e.mem.map(m=>mstate(e,m)),ad=adds(e);
@@ -300,9 +312,9 @@ function draw(fly){
  }
  marks.forEach(m=>m.remove());marks=[];
  all.forEach(([t,i,s])=>{if(s.gone)return;let c=null;
-  if(s.b.length)c=avg(s.b.map(cen));else if(s.shape)c=avg(s.shape.ring);else if(s.pt)c=s.pt;if(!c)return;
+  if(s.b.length)c=avg(s.b.map(cen));else if(shs(s).length)c=avg(shs(s).flatMap(x=>x.ring));else if(s.pt)c=s.pt;if(!c)return;
   const el=document.createElement('div');el.className='nlab';el.textContent=t==='a'?'+'+(i+1):(e.mem[i].no||'?');
-  if(t==='a'||(!s.b.length&&s.shape))el.style.background=css('--add');else if(!s.b.length)el.style.background=css('--ptc');if(isSel(t,i))el.style.outline='2px solid '+css('--cur');
+  if(t==='a'||(!s.b.length&&shs(s).length))el.style.background=css('--add');else if(!s.b.length)el.style.background=css('--ptc');if(isSel(t,i))el.style.outline='2px solid '+css('--cur');
   marks.push(new maplibregl.Marker({element:el}).setLngLat(c).addTo(map))});
  document.getElementById('eKu').textContent=e.k;document.getElementById('eName').textContent=e.g;
  document.getElementById('eInfo').textContent=`${e.mem.length}棟・${e.mem.reduce((a,m)=>a+(m.u||0),0).toLocaleString()}戸${e.nm?`・3Dモデルなし${e.nm}棟`:''}`;
@@ -313,7 +325,7 @@ function draw(fly){
  const acts=(s,del,rb)=>rb?`<div class="acts"><button type="button" data-a="unrb">建て替えを取り消す</button></div>`:`<div class="acts"><button type="button" data-a="clear">建物をすべて外す</button><button type="button" data-a="pt" class="${mode==='pt'?'on':''}">位置だけ指定</button>${del?'<button type="button" data-a="del">この追加を取り消す</button>':`<button type="button" data-a="gone" class="gone ${s.gone?'on':''}">解体済み・見当たらない</button>${s.gone?'':'<button type="button" data-a="rebuild">建て替え済み</button>'}<button type="button" data-a="reset">元に戻す</button>`}</div>`;
  document.getElementById('mem').innerHTML=e.mem.map((m,i)=>{const s=sets[i],ch=changed(e,m),shared=s.b.some(b=>cnt[b]>1),on=isSel('m',i);
   const rb=rbTo(e,m);
-  const stt=rb.length?['rb','建て替え']:s.gone?['gone','解体済み']:s.shape?['mdl','3Dモデルを作成']:ch?(!s.b.length&&s.pt?['pt','位置を指定']:!s.b.length?['warn','建物なし']:['chg','建物を修正']):(!s.b.length?['nomdl','3Dモデルなし']:['','そのまま']);
+  const stt=rb.length?['rb','建て替え']:s.gone?['gone','解体済み']:shs(s).length?['mdl','3Dモデルを作成']:ch?(!s.b.length&&s.pt?['pt','位置を指定']:!s.b.length?['warn','建物なし']:['chg','建物を修正']):(!s.b.length?['nomdl','3Dモデルなし']:['','そのまま']);
   return `<li data-t="m" data-i="${i}" aria-current="${on}"><span class="no">${esc(m.no||'?')}</span><span class="nm">${esc(m.n.replace(e.g,'')||m.n)}</span><span class="st ${stt[0]}">${stt[1]}</span>
    <span class="meta">${m.y||'–'}年度・${m.u||'–'}戸・${s.b.length?'建物'+s.b.length+'つ':'PLATEAUに建物なし'}${shared?'・<b style="color:var(--ng)">他の号館と同じ建物</b>':''}${rb.length?'・<b>'+rb.map(([,j])=>'+'+(j+1)).join('、')+' に建て替え</b>':''}${s.note&&!on?'・メモあり':''}</span>
    ${on?acts(s,false,rb.length>0)+(s.gone?'':mdlBox(s))+`<input type="text" data-a="note" value="${esc(s.note)}" placeholder="この号館についてのメモ（任意）" aria-label="号館のメモ">`:''}</li>`}).join('');
@@ -321,8 +333,8 @@ function draw(fly){
  document.getElementById('adds').innerHTML=ad.map((a,i)=>{const on=isSel('a',i);
   const fr=a.from||[];
   return `<li data-t="a" data-i="${i}" aria-current="${on}"><span class="no add">+${i+1}</span><span class="nm">${esc(a.name||'（名前未入力）')}</span><span class="st ${fr.length?'rb':'add'}">${fr.length?'建て替え後':'追加'}</span>
-   <span class="meta">${fr.length?'建て替え前：'+esc(fr.map(n=>n.replace(e.g,'')).join('・'))+'・':''}${a.b.length?'建物'+a.b.length+'つ':a.shape?'3Dモデルを作成':a.pt?'位置を指定':'<b style="color:var(--ng)">地図で建物・位置を指定するか、3Dモデルを描いてください</b>'}</span>
-   ${on?`<input type="text" data-a="name" value="${esc(a.name)}" placeholder="住棟の名前（例：〇〇住宅５号館、わからなければ空欄）" aria-label="住棟の名前">`+(fr.length?`<div class="rbsel">建て替え前：${e.mem.map(m=>`<button type="button" data-rb="${esc(m.n)}" class="${fr.includes(m.n)?'on':''}" title="${esc(m.n)}">${esc(m.no||'?')}</button>`).join('')}</div>`:'')+acts(a,true)+mdlBox(a)+`<input type="text" data-a="note" value="${esc(a.note)}" placeholder="メモ（例：2024年に完成した新しい棟）" aria-label="追加した住棟のメモ">`:''}</li>`}).join('');
+   <span class="meta">${fr.length?'建て替え前：'+esc(fr.map(n=>n.replace(e.g,'')).join('・'))+'・':''}${a.b.length?'建物'+a.b.length+'つ':shs(a).length?'3Dモデルを作成（箱'+shs(a).length+'つ）':a.pt?'位置を指定':'<b style="color:var(--ng)">地図で建物・位置を指定するか、3Dモデルを描いてください</b>'}</span>
+   ${on?`<input type="text" data-a="name" value="${esc(a.name)}" placeholder="住棟の名前（例：〇〇住宅５号館、わからなければ空欄）" aria-label="住棟の名前">`+(fr.length?`<div class="rbsel">建て替え前：${e.mem.map(m=>`<button type="button" data-rb="${esc(m.n)}" class="${fr.includes(m.n)?'on':''}" title="${esc(m.n)}">${esc(m.no||'?')}</button>`).join('')}</div>`:'')+acts(a,true)+mdlBox(a)+`<input type="text" data-a="note" value="${esc(a.note)}" placeholder="メモ（例：2024年に完成した新しい棟）" aria-label="追加した住棟のメモ"><div class="acts"><button type="button" data-a="more">＋${fr.length?'建て替え後の住棟を':'一覧にない住棟を'}もう1棟追加</button></div>`:''}</li>`}).join('');
  document.querySelectorAll('.side2 .mem li').forEach(li=>{const t=li.dataset.t,i=+li.dataset.i;
   li.onclick=ev=>{const a=ev.target.dataset.a;if(ev.target.tagName==='INPUT')return;
    const rn=ev.target.dataset.rb;if(rn!=null){const ad=adds(e)[i],m=e.mem.find(x=>x.n===rn),k=ad.from.indexOf(rn);
@@ -330,16 +342,18 @@ function draw(fly){
    if(!a){if(!isSel(t,i)){sel={t,i};if(mode==='draw')endDraw();else{mode='edit';draw(false)}}return}
    const o=target();
    if(a==='clear'){o.s.b=[];o.put(o.s)}else if(a==='pt'){if(mode==='draw')DR=null;setMode(mode==='pt'?'edit':'pt');return}
-   else if(a==='drect'||a==='dpoly'){const how=a==='drect'?'rect':'poly';if(mode==='draw'&&DR.kind==='bld'&&DR.how===how)endDraw();else startDraw('bld',how);return}
-   else if(a==='ddel'){o.s.shape=null;o.put(o.s)}
-   else if(a==='gone'){o.s.gone=!o.s.gone;if(o.s.gone){o.s.b=[];o.s.pt=null;o.s.shape=null}o.put(o.s)}
+   else if(a==='drect'||a==='dpoly'){const how=a==='drect'?'rect':'poly';if(mode==='draw'&&DR.kind==='bld'&&DR.pi==null&&DR.how===how)endDraw();else startDraw('bld',how);return}
+   else if(a==='dredo'){const k=+ev.target.dataset.pi;if(mode==='draw'&&DR.kind==='bld'&&DR.pi===k)endDraw();else startDraw('bld',shs(o.s)[k]?.how||'rect',k);return}
+   else if(a==='ddel'){shs(o.s).splice(+ev.target.dataset.pi,1);o.put(o.s)}
+   else if(a==='more'){const ad=adds(e)[i];S.add[ek(e)].push({name:'',from:(ad.from||[]).slice(),b:[],pt:null,note:'',shapes:[]});sel={t:'a',i:S.add[ek(e)].length-1};save()}
+   else if(a==='gone'){o.s.gone=!o.s.gone;if(o.s.gone){o.s.b=[];o.s.pt=null;o.s.shapes=[]}o.put(o.s)}
    else if(a==='reset'){const m=e.mem[i];if(rbTo(e,m).length)cancelRb(e,m);delete S.mem[mk(e,m)];save()}
    else if(a==='unrb'){cancelRb(e,e.mem[i]);save()}
-   else if(a==='rebuild'){const m=e.mem[i];setGone(e,m,true);(S.add[ek(e)]=adds(e)).push({name:'',from:[m.n],b:[],pt:null,note:'',shape:null});sel={t:'a',i:S.add[ek(e)].length-1};save()}
+   else if(a==='rebuild'){const m=e.mem[i];setGone(e,m,true);(S.add[ek(e)]=adds(e)).push({name:'',from:[m.n],b:[],pt:null,note:'',shapes:[]});sel={t:'a',i:S.add[ek(e)].length-1};save()}
    else if(a==='del'){const l=adds(e),fr=l[i].from||[];l.splice(i,1);if(!l.length)delete S.add[ek(e)];unlink(e,fr);sel={t:'m',i:0};save()}
    if(mode==='draw')endDraw();else{mode='edit';draw(false)}};
   li.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{const o=target(),a=inp.dataset.a;
-   if(a==='fh'||a==='fl'){o.s.shape[a]=inp.value;o.put(o.s);userShapes(e,e.mem.map(m=>mstate(e,m)),adds(e));li.querySelector('[data-k="hinfo"]').innerHTML=hInfo(o.s.shape);return}
+   if(a==='fh'||a==='fl'){const k=+inp.dataset.pi,sh=shs(o.s)[k];sh[a]=inp.value;o.put(o.s);userShapes(e,e.mem.map(m=>mstate(e,m)),adds(e));li.querySelector('[data-k="hinfo'+k+'"]').innerHTML=hInfo(sh);return}
    o.s[a]=inp.value;o.put(o.s);renderList();
    if(a==='name')li.querySelector('.nm').textContent=inp.value||'（名前未入力）'})});
  const tg=sel.t==='a'?'追加した住棟 +'+(sel.i+1):(e.mem[sel.i]?.n||'');
@@ -362,7 +376,7 @@ function go(i){cur=Math.max(0,Math.min(E.length-1,i));sel={t:'m',i:0};mode='edit
  const e=E[cur];history.replaceState(null,'','?k='+encodeURIComponent(e.k)+'&g='+encodeURIComponent(e.g))}
 function step(d){const p=view.indexOf(cur);const n=p<0?0:p+d;if(view[n]!=null)go(view[n])}
 document.getElementById('prev').onclick=()=>step(-1);document.getElementById('next').onclick=()=>step(1);
-document.getElementById('addNew').onclick=()=>{const e=E[cur];(S.add[ek(e)]=adds(e)).push({name:'',b:[],pt:null,note:'',shape:null});save();sel={t:'a',i:S.add[ek(e)].length-1};mode='edit';DR=null;sketch();draw(false);
+document.getElementById('addNew').onclick=()=>{const e=E[cur];(S.add[ek(e)]=adds(e)).push({name:'',b:[],pt:null,note:'',shapes:[]});save();sel={t:'a',i:S.add[ek(e)].length-1};mode='edit';DR=null;sketch();draw(false);
  const inp=document.querySelector('#adds li[aria-current="true"] input');if(inp)inp.focus()};
 document.getElementById('done').onclick=()=>{const e=E[cur],s=est(e);s.ok=!s.ok;tidyEst(e);save();if(s.ok)step(1);else draw(false)};
 document.getElementById('memo').oninput=ev=>{const e=E[cur],s=est(e);s.memo=ev.target.value;tidyEst(e);save();renderList()};
@@ -385,10 +399,13 @@ function rows(){const out=[['区','住宅','住棟','報告の種類','PLATEAU�
   e.mem.forEach(m=>{if(!touched(e,m))return;const s=mstate(e,m),ch=changed(e,m);
    const rb=rbTo(e,m),rbNote=rb.length?'建て替え後：'+rb.map(([a,j])=>a.name||'（名前不明 +'+(j+1)+'）').join('・')+(s.note?'／'+s.note:''):'';
    if(rb.length){out.push([e.k,e.g,m.n,'建て替え前（解体）',...blank(9),rbNote]);return}
-   if(ch||(s.note&&!s.shape)){const kind=s.gone?'解体済み・見当たらない':!ch?'メモのみ':s.b.length?'建物を修正':s.pt?'位置だけ指定':'建物なし';
-    out.push([e.k,e.g,m.n,kind,...(s.gone?blank(5):geo(s)),...blank(4),s.shape?'':s.note||''])}
-   if(s.shape)out.push([e.k,e.g,m.n,'3Dモデル（建物範囲）',...blank(5),...mdl(s.shape),s.note||''])});
-  adds(e).forEach((a,j)=>{const fr=a.from||[];out.push([e.k,e.g,a.name||'（名前不明 +'+(j+1)+'）',fr.length?'建て替え後（新しい住棟）':'一覧にない住棟を追加',...geo(a),...mdl(a.shape),fr.length?'建て替え前：'+fr.join('・')+(a.note?'／'+a.note:''):a.note||''])})});
+   const l=shs(s);
+   if(ch||(s.note&&!l.length)){const kind=s.gone?'解体済み・見当たらない':!ch?'メモのみ':s.b.length?'建物を修正':s.pt?'位置だけ指定':'建物なし';
+    out.push([e.k,e.g,m.n,kind,...(s.gone?blank(5):geo(s)),...blank(4),l.length?'':s.note||''])}
+   l.forEach((sh,k)=>out.push([e.k,e.g,m.n,'3Dモデル（建物範囲）',...blank(5),...mdl(sh),[l.length>1?'箱'+(k+1)+'/'+l.length:'',k?'':s.note].filter(Boolean).join('／')]))});
+  adds(e).forEach((a,j)=>{const fr=a.from||[],nm=a.name||'（名前不明 +'+(j+1)+'）',l=shs(a);
+   out.push([e.k,e.g,nm,fr.length?'建て替え後（新しい住棟）':'一覧にない住棟を追加',...geo(a),...blank(4),fr.length?'建て替え前：'+fr.join('・')+(a.note?'／'+a.note:''):a.note||'']);
+   l.forEach((sh,k)=>out.push([e.k,e.g,nm,'3Dモデル（建物範囲）',...blank(5),...mdl(sh),l.length>1?'箱'+(k+1)+'/'+l.length:'']))})});
  return out}
 function csv(){const q=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};return rows().map(r=>r.map(q).join(',')).join('\n')}
 function report(){const r=rows();if(r.length<2)return '';
