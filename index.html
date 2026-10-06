@@ -61,17 +61,10 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .sres .tag.e{border-color:var(--estate);color:var(--estate)}
 .sres .ku{margin-left:auto;color:var(--muted);font-size:11.5px;flex:none}
 .sres .none{padding:6px 8px;color:var(--muted);font-size:12.5px}
-.rep{display:flex;flex-direction:column;gap:6px;font-size:12.5px}
-.rep label{display:flex;gap:6px;align-items:flex-start;cursor:pointer}
-.rep textarea{font:inherit;font-size:12.5px;min-height:56px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);padding:6px}
 .btn{font:inherit;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
 .btn.pri{background:var(--sel-line);border-color:var(--sel-line);color:#fff;font-weight:700}
 .btn.on{outline:2px solid var(--sel-line)}
-.repbtn{align-self:flex-start;font:inherit;font-size:12px;border:1px solid var(--sel-line);color:var(--sel-line);background:transparent;border-radius:6px;padding:4px 10px;cursor:pointer}
-.modal{position:fixed;inset:0;background:rgb(0 0 0 / .4);display:flex;align-items:center;justify-content:center;z-index:20}
-.modal>div{background:var(--panel);color:var(--ink);border-radius:10px;padding:16px;width:min(760px,calc(100vw - 32px));display:flex;flex-direction:column;gap:8px}
-.modal textarea{width:100%;box-sizing:border-box;height:280px;font-family:var(--font-num);font-size:11.5px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px}
-.banner{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--sel-line);color:#fff;font-weight:700;padding:8px 14px;border-radius:8px;font-size:13px;z-index:5;box-shadow:0 4px 16px rgb(0 0 0 / .2)}
+.detail a.repbtn,.info a.repbtn,.repbtn{align-self:flex-start;display:inline-block;font:inherit;font-size:13px;font-weight:700;border:1px solid var(--sel-line);color:#fff;background:var(--sel-line);border-radius:6px;padding:7px 12px;text-decoration:none;cursor:pointer}
 .legend label{display:flex;align-items:center;gap:8px;cursor:pointer}
 .legend label .cnt{margin-left:auto;font-family:var(--font-num);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .legend label input{margin:0}
@@ -107,10 +100,6 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 </style>
 </head><body><div id="map" role="application" aria-label="市営住宅の3D地図"></div>
 <div class="tip" id="tip" hidden></div>
-<div class="banner" id="banner" hidden>正しい位置（建物の中心あたり）を地図上でクリックしてください　<button class="btn" id="bnCancel" style="margin-left:8px">やめる</button></div>
-<div class="modal" id="modal" hidden><div><b id="mTitle">誤りの報告（CSV）</b><p class="note" style="margin:0">「コピー」を押して、報告フォームの回答欄に貼り付けて送信してください。</p><textarea id="mTxt" readonly aria-label="報告の内容"></textarea>
-<div class="row"><button class="btn pri" id="mCopy">コピー</button><a class="btn pri" id="mForm" target="_blank" rel="noopener" style="text-decoration:none" hidden>報告フォームを開く</a><button class="btn" id="mSave">CSVファイルで保存</button><button class="btn" id="mClear">記録をすべて消す</button><button class="btn" id="mClose">閉じる</button><span class="note" id="mMsg"></span></div>
-<p class="note" id="mAsk" hidden style="margin:0">本当に消しますか？ <button class="btn" id="mYes">消す</button> <button class="btn" id="mNo">やめる</button></p></div></div>
 <aside class="side info" id="side" hidden aria-live="polite"><button class="x" id="sideX" aria-label="閉じる">×</button><div id="sideBody"></div></aside>
 <div class="panel" id="panel">
   <div class="sec">
@@ -145,9 +134,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <p class="note" id="bmNote" hidden>この表示画面では背景地図を読み込めません。HTMLファイルを保存してブラウザで開くと表示されます。</p>
     <label class="chk"><input type="checkbox" id="exag">高さを3倍に強調（市域全体を見るとき）</label>
   </div>
-  <div class="sec"><span class="lbl">誤りの報告</span><p class="note" style="margin:0">住棟や団地を選ぶと、右側の「誤りを報告」から記録できます。記録はこのブラウザに保存されます。</p>
-    <p class="note" style="margin:0"><a href="check.html" style="color:var(--sel-line);font-weight:700">確認・報告ページ</a>では、住宅ごとに号館の建物の付け替え・解体済み・一覧にない住棟の追加、3Dモデルがない住棟の直方体モデルや敷地範囲の作成をまとめて報告できます。</p>
-    <div class="row"><span>記録 <b id="repN" style="font-family:var(--font-num)">0</b> 件</span><button class="btn" id="repOut">CSVで出力</button><button class="btn" id="repList">一覧</button></div></div>
+  <div class="sec"><span class="lbl">誤りの報告</span><p class="note" style="margin:0">建物の位置の違い・解体済み・建て替え・一覧にない住棟の追加、3Dモデルがない住棟の直方体モデルや敷地範囲は、<a href="check.html" style="color:var(--sel-line);font-weight:700">確認・報告ページ</a>から報告できます。住棟や住宅を選んだときに出るボタンからも開けます。</p>
+    <div class="row"><a class="btn pri" href="check.html" style="text-decoration:none">確認・報告ページを開く</a></div></div>
   <div class="sec detail" id="detail"><p class="empty">建物をクリックすると、画面右側に住宅名・建設年度・耐震性・活用手法などを表示します。</p></div>
   <div class="sec"><p class="note">建物形状・高さ：国土交通省 PLATEAU 大阪市（2024年度）。住棟一覧：大阪市「市営住宅一覧（位置情報付）R4.4.1」、「市営住宅ストック総合活用計画（別冊）R8.3」。築年数は2026年度時点。半透明の箱は、PLATEAUで建物を特定できなかった住棟（R4以降の新築など）を推定位置に仮の形・高さで置いたものです。敷地の点線は、同じ住宅名の住棟を囲んで描いた目安で、実際の敷地境界ではありません。背景地図：国土地理院「地理院タイル（淡色地図・全国最新写真〈シームレス〉）」。福島区・西区は市営住宅がないため灰色。浸水深はPLATEAUの災害リスク属性（洪水浸水想定区域〈想定最大規模・計画規模〉・高潮・津波）の最大値。階の目安は1階あたり2.9mとした概算。区界：国土数値情報（行政区域）をもとにしたGeoJSON（niiyz/JapanCityGeoJson）。</p></div>
 </div>
@@ -233,14 +221,14 @@ map.on('load',()=>{
  map.addLayer({id:'selHalo',type:'circle',source:'sel',filter:['==',['geometry-type'],'Point'],paint:{'circle-radius':26,'circle-color':'rgba(0,0,0,0)','circle-stroke-color':css('--sel-line'),'circle-stroke-width':3,'circle-pitch-alignment':'map'}});
  map.addLayer({id:'selLine',type:'line',source:'sel',filter:['!=',['geometry-type'],'Point'],paint:{'line-color':css('--sel-line'),'line-width':4}});
  legend();apply(false);
- for(const id of['bx','pt']){map.on('click',id,e=>{if(picking)return;e.preventDefault();pick(e.features[0],id==='bx'?'b':'p')});map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='')}
+ for(const id of['bx','pt']){map.on('click',id,e=>{e.preventDefault();pick(e.features[0],id==='bx'?'b':'p')});map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='')}
  // 敷地：ホバーで住宅名、クリックでまとめ
  let hov=null;const tip=document.getElementById('tip');
  map.on('mousemove','ef',e=>{const f=e.features[0];if(hov!==f.id){if(hov!=null)map.setFeatureState({source:'e',id:hov},{hov:false});hov=f.id;map.setFeatureState({source:'e',id:hov},{hov:true})}
    const p=f.properties;tip.innerHTML=`<b>${esc(p.g)}</b>　${p.nb}棟・${(p.u||0).toLocaleString()}戸`;tip.style.left=e.point.x+'px';tip.style.top=e.point.y+'px';tip.hidden=false;map.getCanvas().style.cursor='pointer'});
  map.on('mouseleave','ef',()=>{if(hov!=null)map.setFeatureState({source:'e',id:hov},{hov:false});hov=null;tip.hidden=true;map.getCanvas().style.cursor=''});
- map.on('click','ef',e=>{if(picking||e.defaultPrevented)return;e.preventDefault();pickEstate(e.features[0].properties.k,e.features[0].properties.g)});
- map.on('click',e=>{if(picking){setPick(e.lngLat);return}if(!e.defaultPrevented&&(sel||selE!=null))closeSide()});
+ map.on('click','ef',e=>{if(e.defaultPrevented)return;e.preventDefault();pickEstate(e.features[0].properties.k,e.features[0].properties.g)});
+ map.on('click',e=>{if(!e.defaultPrevented&&(sel||selE!=null))closeSide()});
  map.on('moveend',updEstLabels);updEstLabels();
 });
 function estateOf(k,g){return D.e.features.find(f=>f.properties.k===k&&f.properties.g===g)}
@@ -292,8 +280,7 @@ function pick(f,src){
  const sib=est&&est.properties.nb>1?`<button type="button" class="x2" id="toEst" style="font:inherit;font-size:12.5px;border:0;background:none;color:var(--accent);cursor:pointer;padding:0;text-align:left;text-decoration:underline">${esc(p.g)}（${est.properties.nb}棟）のまとめを見る</button>`:'';
  show(`<span class="eyebrow">選択中の住棟</span><h2>${esc(p.n)}</h2><dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>${sib}
  <div class="links"><a href="https://maps.gsi.go.jp/#18/${p.lat}/${p.lon}/&base=ort" target="_blank" rel="noopener">地理院地図（航空写真）</a><a href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank" rel="noopener">Googleマップ</a></div>
- <button type="button" class="repbtn" id="repGo">このデータの誤りを報告</button><div id="repBox"></div>${chkLink(p.k,p.g,src==='p'?p.n:'')}`,p.lon,p.lat,p.n);
- repTarget={kind:'住棟',k:p.k,n:p.n,lat:p.lat,lon:p.lon};document.getElementById('repGo').onclick=openRep;
+ ${chkLink(p.k,p.g,src==='p'?p.n:'')}`,p.lon,p.lat,p.n);
  const t=document.getElementById('toEst');if(t)t.onclick=()=>pickEstate(p.k,p.g);
 }
 function pickEstate(k,g){
@@ -305,12 +292,11 @@ function pickEstate(k,g){
  show(`<span class="eyebrow">住宅（団地）のまとめ</span><h2>${esc(g)}</h2><dl><dt>区</dt><dd>${esc(k)}</dd><dt>住棟数</dt><dd>${e.nb}棟</dd><dt>戸数</dt><dd>${(e.u||0).toLocaleString()}戸</dd><dt>建設年度</dt><dd>${yr}</dd><dt>活用手法</dt><dd>${esc(meth)}</dd></dl>
  <span class="lbl">住棟（クリックで選択）</span><ul class="blist">${mem.map(f=>`<li><button type="button" data-fid="${f.id}"><span class="sw" style="background:var(${col(f)})"></span>${esc(f.properties.n.replace(g,''))}<span style="margin-left:auto;color:var(--muted)">${f.properties.y||'–'}・${f.properties.u||'–'}戸</span></button></li>`).join('')}</ul>
  <div class="links"><a href="https://maps.gsi.go.jp/#17/${e.lat}/${e.lon}/&base=ort" target="_blank" rel="noopener">地理院地図（航空写真）</a><a href="https://www.google.com/maps?q=${e.lat},${e.lon}" target="_blank" rel="noopener">Googleマップ</a></div>
- <button type="button" class="repbtn" id="repGo">この団地の誤りを報告</button><div id="repBox"></div>${chkLink(k,g)}`,e.lon,e.lat,g);
- repTarget={kind:'団地',k:k,n:g,lat:e.lat,lon:e.lon};document.getElementById('repGo').onclick=openRep;
+ ${chkLink(k,g)}`,e.lon,e.lat,g);
 }
 function closeSide(){clearSel();document.getElementById('side').hidden=true;document.getElementById('detail').innerHTML='<p class="empty">建物をクリックすると、画面右側に住宅名・建設年度・耐震性・活用手法などを表示します。</p>'}
 document.getElementById('sideX').onclick=closeSide;
-addEventListener('keydown',e=>{if(e.key==='Escape'){if(picking)stopPick();else closeSide()}});
+addEventListener('keydown',e=>{if(e.key==='Escape')closeSide()});
 const btn={age:'mAge',meth:'mMeth',seis:'mSeis',flood:'mFlood'};
 for(const[m,id]of Object.entries(btn))document.getElementById(id).onclick=()=>{mode=m;for(const[k,i]of Object.entries(btn))document.getElementById(i).setAttribute('aria-pressed',k===m);recolor()};
 kuSel.onchange=()=>apply(true);document.getElementById('fl').onchange=()=>apply(false);
@@ -323,43 +309,8 @@ document.getElementById('tg').onclick=e=>{const p=document.getElementById('panel
 function retheme(){if(!map.isStyleLoaded())return;map.setPaintProperty('bg','background-color',css('--ground'));map.setPaintProperty('wl','line-color',css('--ink'));map.setPaintProperty('gsi','raster-brightness-max',dark()?.42:1);map.setPaintProperty('gsi','raster-saturation',dark()?-.6:-.2);recolor()}
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',retheme);
 new MutationObserver(retheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-// ---- 誤りの報告 ----
-// 報告の送り先（Googleフォーム。tools/build_check_page.py で設定）
-const FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLScGGzhssu_Ax0esjxqsZFrZebnoe-seR5kVGPS9JKaOQl3Xrw/viewform';
-const chkLink=(k,g,n)=>`<a class="note" style="color:var(--sel-line)${n?';font-weight:700':''}" href="check.html?k=${encodeURIComponent(k)}&g=${encodeURIComponent(g)}${n?'&n='+encodeURIComponent(n):''}">${n?'この住棟の3Dモデル（直方体）を作って報告する':`確認・報告ページで「${esc(g)}」を開く（建物の付け替え・解体・追加・3Dモデル・敷地）`}</a>`;
-const RKEY='shiei-3d-reports-v1';let REP=[];try{REP=JSON.parse(localStorage.getItem(RKEY)||'[]')}catch(e){}
-const rsave=()=>{try{localStorage.setItem(RKEY,JSON.stringify(REP))}catch(e){}document.getElementById('repN').textContent=REP.length};rsave();
-let repTarget=null,picking=false,pickLL=null,pickMk=null;
-const RTYPES=['建物の位置・形が違う（別の建物を拾っている）','建物がない／まだPLATEAUにない','住宅名・戸数・建設年度などの情報が違う','その他'];
-function openRep(){const t=repTarget;pickLL=null;
- document.getElementById('repBox').innerHTML=`<div class="rep"><b>「${esc(t.n)}」の誤りを報告</b>${RTYPES.map((r,i)=>`<label><input type="radio" name="rt" value="${i}" ${i===0?'checked':''}>${r}</label>`).join('')}
- <div class="row"><button type="button" class="btn" id="rpPick">正しい位置を地図でクリック（任意）</button><span class="note" id="rpLL">未指定</span></div>
- <textarea id="rpMemo" placeholder="内容（例：南側の細長い建物が正しい、など）" aria-label="報告の内容"></textarea>
- <div class="row"><button type="button" class="btn pri" id="rpSave">記録する</button><button type="button" class="btn" id="rpCancel">やめる</button></div></div>`;
- document.getElementById('repGo').hidden=true;
- document.getElementById('rpPick').onclick=startPick;
- document.getElementById('rpCancel').onclick=()=>{stopPick();clearPickMk();document.getElementById('repBox').innerHTML='';document.getElementById('repGo').hidden=false};
- document.getElementById('rpSave').onclick=()=>{const i=+document.querySelector('input[name=rt]:checked').value;
-  REP.push({t:(d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`)(new Date()),kind:t.kind,k:t.k,n:t.n,type:RTYPES[i],lat:t.lat,lon:t.lon,clat:pickLL?pickLL.lat:'',clon:pickLL?pickLL.lng:'',memo:document.getElementById('rpMemo').value});
-  rsave();stopPick();clearPickMk();document.getElementById('repBox').innerHTML='<p class="note" style="color:var(--sel-line);font-weight:700">記録しました（'+REP.length+'件目）。左パネルの「CSVで出力」から送れます。</p>'}}
-function startPick(){picking=true;document.getElementById('banner').hidden=false;document.getElementById('rpPick').classList.add('on');map.getCanvas().style.cursor='crosshair'}
-function stopPick(){picking=false;document.getElementById('banner').hidden=true;const b=document.getElementById('rpPick');if(b)b.classList.remove('on');map.getCanvas().style.cursor=''}
-function clearPickMk(){if(pickMk){pickMk.remove();pickMk=null}}
-function setPick(ll){pickLL=ll;clearPickMk();pickMk=new maplibregl.Marker({color:css('--sel-line')}).setLngLat(ll).addTo(map);const s=document.getElementById('rpLL');if(s)s.textContent=`指定済み（${ll.lat.toFixed(6)}, ${ll.lng.toFixed(6)}）`;stopPick()}
-document.getElementById('bnCancel').onclick=stopPick;
-function repCsv(){const q=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
- return [['記録日時','対象','区','住宅名','誤りの種類','現在の緯度','現在の経度','正しい位置_緯度','正しい位置_経度','内容'],...REP.map(r=>[r.t,r.kind,r.k,r.n,r.type,r.lat,r.lon,r.clat===''?'':(+r.clat).toFixed(6),r.clon===''?'':(+r.clon).toFixed(6),r.memo])].map(r=>r.map(q).join(',')).join('\n')}
-function openModal(list){document.getElementById('mTitle').textContent=list?'誤りの報告（一覧）':'誤りの報告（CSV）';
- document.getElementById('mTxt').value=list?REP.map((r,i)=>`${i+1}. [${r.kind}] ${r.k} ${r.n}：${r.type}${r.clat!==''?'（正しい位置を指定）':''}${r.memo?'\n   '+r.memo:''}`).join('\n')||'まだ記録はありません':repCsv();
- document.getElementById('mMsg').textContent='';document.getElementById('mAsk').hidden=true;document.getElementById('modal').hidden=false}
-if(FORM_URL){const a=document.getElementById('mForm');a.href=FORM_URL;a.hidden=false}
-document.getElementById('repOut').onclick=()=>openModal(false);document.getElementById('repList').onclick=()=>openModal(true);
-document.getElementById('mClose').onclick=()=>document.getElementById('modal').hidden=true;
-document.getElementById('mCopy').onclick=()=>{const t=document.getElementById('mTxt');navigator.clipboard.writeText(t.value).then(()=>document.getElementById('mMsg').textContent='コピーしました').catch(()=>{t.select();document.getElementById('mMsg').textContent='選択しました。Ctrl+Cでコピーしてください'})};
-document.getElementById('mSave').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+repCsv()],{type:'text/csv'}));a.download='市営住宅3Dマップ_誤り報告.csv';document.body.appendChild(a);a.click();a.remove()};
-document.getElementById('mClear').onclick=()=>document.getElementById('mAsk').hidden=false;
-document.getElementById('mNo').onclick=()=>document.getElementById('mAsk').hidden=true;
-document.getElementById('mYes').onclick=()=>{REP=[];rsave();document.getElementById('modal').hidden=true};
+// ---- 確認・報告ページへのリンク ----
+const chkLink=(k,g,n)=>`<a class="repbtn" href="check.html?k=${encodeURIComponent(k)}&g=${encodeURIComponent(g)}${n?'&n='+encodeURIComponent(n):''}">${n?'この住棟の3Dモデル（直方体）を作って報告する':'この住宅の誤りを報告する（確認・報告ページ）'}</a>`;
 // ---- 住宅名検索 ----
 const nz=s=>String(s||'').normalize('NFKC').replace(/\s+/g,'').replace(/ヶ|ケ|が/g,'ケ');
 const SIDX=[...D.e.features.map(f=>({t:'e',name:f.properties.g,k:f.properties.k,nb:f.properties.nb,key:nz(f.properties.g)})),

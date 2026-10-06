@@ -8,8 +8,7 @@
 - 号館・建物の対応：data/shiei_jutaku_master.csv
 - 住宅の敷地の点線：index.html に埋め込まれた住宅（団地）の形
 - 周りのPLATEAU建物：check.html（なければ tools/danchi_check.html）に埋め込まれたもの
-- GoogleフォームのURL：引数で指定すると check.html と index.html の両方に設定する。
-  省略したときは今の check.html の設定を引き継ぐ
+- GoogleフォームのURL：引数で指定する。省略したときは今の check.html の設定を引き継ぐ
 """
 import csv, datetime, json, re, sys, unicodedata
 from pathlib import Path
@@ -82,10 +81,6 @@ def main():
     html = html.replace('__FORM_URL__', form_url.replace("'", '%27'))
     html = html.replace('__DATA__', json.dumps(data, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/'))
     out.write_text(html, encoding='utf-8')
-    if len(sys.argv) > 1:
-        index = ROOT / 'index.html'
-        index.write_text(re.sub(r"const FORM_URL='[^']*'", lambda m: f"const FORM_URL='{form_url.replace(chr(39), '%27')}'",
-                                index.read_text(encoding='utf-8'), count=1), encoding='utf-8')
     print(f'{out.name}: 住宅 {len(E)}・号館 {sum(len(e["mem"]) for e in E)}・建物 {len(buildings)}・フォーム {"設定あり" if form_url else "未設定"}')
 
 
