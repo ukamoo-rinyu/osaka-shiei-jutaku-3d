@@ -39,7 +39,11 @@ main{position:relative;min-width:0;min-height:0}
 #map{position:absolute;inset:0}
 .leg{position:absolute;top:12px;left:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;display:flex;flex-direction:column;gap:4px;max-width:calc(100% - 80px)}
 .leg div{display:flex;gap:6px;align-items:center}.sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
-.banner{position:absolute;left:50%;transform:translateX(-50%);bottom:24px;background:var(--ptc);color:#fff;font-weight:700;padding:8px 14px;border-radius:999px;font-size:12.5px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgb(0 0 0 / .2);white-space:nowrap}
+.bm{position:absolute;z-index:3;left:12px;bottom:12px;display:flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgb(0 0 0 / .12)}
+.bm button{font-size:12.5px;padding:7px 12px;border:0;background:transparent;color:var(--ink)}
+.bm button+button{border-left:1px solid var(--line)}
+.bm button[aria-pressed="true"]{background:var(--accent);color:var(--panel);font-weight:700}
+.banner{position:absolute;left:50%;transform:translateX(-50%);bottom:60px;background:var(--ptc);color:#fff;font-weight:700;padding:8px 14px;border-radius:999px;font-size:12.5px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgb(0 0 0 / .2);white-space:nowrap}
 .banner.draw{background:var(--add)}
 .banner button{border:1px solid #fff;background:transparent;color:#fff;border-radius:999px;padding:2px 10px;font-size:12px}
 .side2{display:flex;flex-direction:column;min-width:0;min-height:0;border-left:1px solid var(--line);background:var(--panel)}
@@ -97,6 +101,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
  .side2 .top{padding:8px 12px}
  .leg{font-size:11px;padding:6px 8px;top:8px;left:8px}
  .leg .more{display:none}
+ .bm{left:8px;bottom:34px}
+ .banner{bottom:74px}
+ .bm button{padding:6px 10px}
 }
 </style></head><body>
 <aside id="aside">
@@ -124,6 +131,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 <main>
  <div id="map"></div>
  <div class="leg"><div><span class="sw" style="background:var(--cur)"></span>選んでいる号館の建物</div><div><span class="sw" style="background:var(--muni)"></span>この住宅のほかの号館</div><div class="more"><span class="sw" style="background:var(--cand);opacity:.7"></span>周りの建物（クリックで選んでいる号館に追加・解除）</div><div class="more"><span class="sw" style="background:var(--ptc);border-radius:50%"></span>3Dモデルがない（位置だけ）の号館</div><div class="more"><span class="sw" style="background:var(--add)"></span>描いた3Dモデル</div><div class="more"><span class="sw" style="border:2px solid var(--site);box-sizing:border-box"></span>描いた敷地範囲</div></div>
+ <div class="bm" role="group" aria-label="背景地図"><button type="button" data-bm="map" aria-pressed="true">地図</button><button type="button" data-bm="photo" aria-pressed="false">航空写真</button></div>
  <div class="banner" id="banner" hidden></div>
 </main>
 <section class="side2">
@@ -209,7 +217,12 @@ const map=new maplibregl.Map({container:'map',center:[135.5,34.67],zoom:16,pitch
 map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
 class BtnCtl{constructor(lab,fn){this.lab=lab;this.fn=fn}onAdd(m){const c=document.createElement('div');c.className='maplibregl-ctrl maplibregl-ctrl-group';const b=document.createElement('button');b.type='button';b.style.cssText='font:700 11px var(--font-ui);width:29px;height:29px;color:#333';b.title=this.lab[1];b.textContent=this.lab[0];b.onclick=()=>this.fn(b,m);c.appendChild(b);return c}onRemove(){}}
 map.addControl(new BtnCtl(['3D','2D/3Dの切り替え'],(b,m)=>{const to3=m.getPitch()<=5;m.easeTo(to3?{pitch:55}:{pitch:0,bearing:0});b.textContent=to3?'2D':'3D'}),'top-right');
-map.addControl(new BtnCtl(['写真','航空写真の切り替え'],(b,m)=>{const on=m.getLayoutProperty('photo','visibility')!=='visible';m.setLayoutProperty('photo','visibility',on?'visible':'none');m.setPaintProperty('cx','fill-extrusion-opacity',on?.6:.88);b.textContent=on?'地図':'写真'}),'top-right');
+// 背景地図の切り替え（地図／航空写真）。選んだほうはこのブラウザに覚えておく
+function setBase(v){const ph=v==='photo';
+ document.querySelectorAll('[data-bm]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.bm===v));
+ const ap=()=>{map.setLayoutProperty('photo','visibility',ph?'visible':'none');map.setLayoutProperty('gsi','visibility',ph?'none':'visible');map.setPaintProperty('cx','fill-extrusion-opacity',ph?.6:.88)};
+ map.getLayer('cx')?ap():map.once('load',ap);try{localStorage.setItem('shiei-3d-check-base',v)}catch(e){}}
+document.querySelectorAll('[data-bm]').forEach(b=>b.onclick=()=>setBase(b.dataset.bm));
 map.addControl(new maplibregl.AttributionControl({compact:true,customAttribution:'PLATEAU（国土交通省）'}),'bottom-right');
 const FC=f=>({type:'FeatureCollection',features:f});
 let marks=[];
@@ -235,6 +248,7 @@ map.on('load',()=>{
   else if(mode==='draw'){DR.pts.push(p);if(DR.how==='rect'&&DR.pts.length===3)finishDraw();else{sketch();banner()}}});
  map.on('mousemove',ev=>{if(mode==='draw'){DR.hover=[ev.lngLat.lng,ev.lngLat.lat];sketch()}
   map.getCanvas().style.cursor=mode!=='edit'?'crosshair':(map.queryRenderedFeatures(ev.point,{layers:['cx']}).length?'pointer':'')});
+ try{if(localStorage.getItem('shiei-3d-check-base')==='photo')setBase('photo')}catch(e){}
  const p=new URLSearchParams(location.search),g=p.get('g'),k=p.get('k'),n=p.get('n');
  const i0=g?E.findIndex(e=>e.g===g&&(!k||e.k===k)):-1;go(i0<0?0:i0);
  if(n){const j=E[cur].mem.findIndex(m=>m.n===n);if(j>0){sel={t:'m',i:j};draw(false)}}
