@@ -103,9 +103,33 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   .toggle{display:block;font:inherit;font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer}
   .panel.min .sec:not(:first-child){display:none}
 }
+
+/* ---- ツアー（住宅のまわりを1周） ---- */
+.tcard{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:12px;width:300px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-top:4px solid var(--sel-line);border-radius:10px;box-shadow:0 6px 24px rgb(0 0 0 / .18);padding:12px 16px 14px;z-index:5}
+.tcard .eyebrow{font-size:11px;color:var(--sel-line);letter-spacing:.08em;font-weight:700}
+.tcard h2{font-size:20px;margin:2px 0 8px;line-height:1.3}
+.tcard dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0;font-size:13px}.tcard dt{color:var(--muted)}.tcard dd{margin:0;font-weight:700}
+.tcard .bar{height:4px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}.tcard .bar i{display:block;height:100%;width:0;background:var(--sel-line)}
+.tbar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;align-items:center;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 10px;box-shadow:0 4px 16px rgb(0 0 0 / .18);z-index:5;white-space:nowrap}
+.tbar button,.tbar select{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer}
+.tbar .pri{background:var(--sel-line);border-color:var(--sel-line);color:#fff;font-weight:700;min-width:44px}
+.tbar .pos{font-size:12px;color:var(--muted);font-family:var(--font-num)}
+.recx{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:6;font:inherit;font-size:11px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:4px 10px;opacity:.35;cursor:pointer}
+.recx:hover{opacity:1}
+body.touring .panel,body.touring .side,body.touring .tip{display:none!important}
+body.rec .tbar,body.rec .maplibregl-ctrl-bottom-right,body.rec .maplibregl-ctrl-top-right{display:none!important}
+body.rec .tcard{width:340px}body.rec .tcard h2{font-size:24px}
+@media (max-width:640px){
+  .tcard{left:8px;right:8px;width:auto;padding:10px 12px 12px}.tcard h2{font-size:18px}.tcard dl{font-size:12.5px;grid-template-columns:auto 1fr auto 1fr}
+  body.rec .tcard{width:auto}
+  .tbar{gap:4px;padding:5px 6px;max-width:calc(100% - 16px);overflow-x:auto}.tbar button,.tbar select{padding:5px 8px;font-size:12.5px}.tbar .pos{display:none}
+}
 </style>
 </head><body><div id="map" role="application" aria-label="市営住宅の3D地図"></div>
 <div class="tip" id="tip" hidden></div>
+<div class="tcard" id="tcard" hidden aria-live="polite"></div>
+<div class="tbar" id="tbar" hidden><button type="button" id="tPrev">◀ 前</button><button type="button" class="pri" id="tPlay">一時停止</button><button type="button" id="tNext">次 ▶</button><span class="pos" id="tPos"></span><select id="tSpd" aria-label="速さ"><option value="0.5">ゆっくり</option><option value="1" selected>ふつう</option><option value="2">はやい</option></select><button type="button" id="tRec">録画モード</button><button type="button" id="tEnd">終了</button></div>
+<button type="button" class="recx" id="recX" hidden>録画モードを終える</button>
 <aside class="side info" id="side" hidden aria-live="polite"><button class="x" id="sideX" aria-label="閉じる">×</button><div id="sideBody"></div></aside>
 <div class="panel" id="panel">
   <div class="sec">
@@ -140,6 +164,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <p class="note" id="bmNote" hidden>この表示画面では背景地図を読み込めません。HTMLファイルを保存してブラウザで開くと表示されます。</p>
     <label class="chk"><input type="checkbox" id="exag">高さを3倍に強調（市域全体を見るとき）</label>
   </div>
+  <div class="sec"><span class="lbl">ツアー（住宅のまわりを1周）</span><p class="note" style="margin:0">住宅ごとに、名前・戸数・階数・耐震性などを出しながら、まわりをぐるりと回って全体を見せます。住宅を選んだときの「この住宅を1周見る」からも始められます。</p>
+    <div class="row"><select id="tKu" aria-label="ツアーの区"><option value="">全区</option></select><select id="tOrd" aria-label="ツアーの順番"><option value="name">住宅名の順</option><option value="u">戸数の多い順</option><option value="old">建設の古い順</option><option value="fl">浸水深の深い順</option></select></div>
+    <div class="row"><span class="note" style="margin:0">1周</span><select id="tSec" aria-label="1周の時間"><option value="12">12秒</option><option value="20" selected>20秒</option><option value="30">30秒</option></select><button class="btn pri" id="tGo" type="button">ツアーを始める</button></div></div>
   <div class="sec"><span class="lbl">誤りの報告</span><p class="note" style="margin:0">建物の位置の違い・解体済み・建て替え・一覧にない住棟の追加、3Dモデルがない住棟の直方体モデルや敷地範囲は、<a href="check.html" style="color:var(--sel-line);font-weight:700">確認・報告ページ</a>から報告できます。住棟や住宅を選んだときに出るボタンからも開けます。</p>
     <div class="row"><a class="btn pri" href="check.html" style="text-decoration:none">確認・報告ページを開く</a></div></div>
   <div class="sec detail" id="detail"><p class="empty">建物をクリックすると、画面右側に住宅名・建設年度・耐震性・活用手法などを表示します。</p></div>
@@ -228,23 +255,23 @@ map.on('load',()=>{
  map.addLayer({id:'selHalo',type:'circle',source:'sel',filter:['==',['geometry-type'],'Point'],paint:{'circle-radius':26,'circle-color':'rgba(0,0,0,0)','circle-stroke-color':css('--sel-line'),'circle-stroke-width':3,'circle-pitch-alignment':'map'}});
  map.addLayer({id:'selLine',type:'line',source:'sel',filter:['!=',['geometry-type'],'Point'],paint:{'line-color':css('--sel-line'),'line-width':4}});
  legend();apply(false);
- for(const id of['bx','pt']){map.on('click',id,e=>{e.preventDefault();pick(e.features[0],id==='bx'?'b':'p')});map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='')}
+ for(const id of['bx','pt']){map.on('click',id,e=>{if(TR)return;e.preventDefault();pick(e.features[0],id==='bx'?'b':'p')});map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='')}
  // 敷地：ホバーで住宅名、クリックでまとめ
  let hov=null;const tip=document.getElementById('tip');
  map.on('mousemove','ef',e=>{const f=e.features[0];if(hov!==f.id){if(hov!=null)map.setFeatureState({source:'e',id:hov},{hov:false});hov=f.id;map.setFeatureState({source:'e',id:hov},{hov:true})}
    const p=f.properties;tip.innerHTML=`<b>${esc(p.g)}</b>　${p.nb}棟・${(p.u||0).toLocaleString()}戸`;tip.style.left=e.point.x+'px';tip.style.top=e.point.y+'px';tip.hidden=false;map.getCanvas().style.cursor='pointer'});
  map.on('mouseleave','ef',()=>{if(hov!=null)map.setFeatureState({source:'e',id:hov},{hov:false});hov=null;tip.hidden=true;map.getCanvas().style.cursor=''});
- map.on('click','ef',e=>{if(e.defaultPrevented)return;e.preventDefault();pickEstate(e.features[0].properties.k,e.features[0].properties.g)});
- map.on('click',e=>{if(!e.defaultPrevented&&(sel||selE!=null))closeSide()});
+ map.on('click','ef',e=>{if(TR||e.defaultPrevented)return;e.preventDefault();pickEstate(e.features[0].properties.k,e.features[0].properties.g)});
+ map.on('click',e=>{if(!TR&&!e.defaultPrevented&&(sel||selE!=null))closeSide()});
  map.on('moveend',updEstLabels);updEstLabels();
 });
 function estateOf(k,g){return D.e.features.find(f=>f.properties.k===k&&f.properties.g===g)}
 function setSelE(f){if(selE!=null)map.setFeatureState({source:'e',id:selE},{sel:false});selE=f?f.id:null;if(f)map.setFeatureState({source:'e',id:f.id},{sel:true})}
-function updEstLabels(){
+function updEstLabels(){if(TR&&TR.spin)return;
  estLabels.forEach(m=>m.remove());estLabels=[];
  if(map.getZoom()<15||!document.getElementById('es').checked)return;
  const b=map.getBounds(),k=kuSel.value;
- D.e.features.filter(f=>(!k||f.properties.k===k)&&b.contains([f.properties.lon,f.properties.lat])).slice(0,80).forEach(f=>{
+ D.e.features.filter(f=>(TR?f===TR.list[TR.i]:(!k||f.properties.k===k))&&b.contains([f.properties.lon,f.properties.lat])).slice(0,80).forEach(f=>{
   const el=document.createElement('div');el.className='elab';el.textContent=f.properties.g;estLabels.push(new maplibregl.Marker({element:el,anchor:'top',offset:[0,4]}).setLngLat(f.lab).addTo(map))});
 }
 function filt(){const f=['all'];if(document.getElementById('fl').checked)f.push(['in','修正',['coalesce',['get','rv'],'']]);if(kuSel.value)f.push(['==',['get','k'],kuSel.value]);for(const m in CAT)f.push(['in',['get',CAT[m].prop],['literal',[...ON[m]]]]);return f}
@@ -307,11 +334,13 @@ function pickEstate(k,g){
  show(`<span class="eyebrow">住宅（団地）のまとめ</span><h2>${esc(g)}</h2><dl><dt>区</dt><dd>${esc(k)}</dd><dt>住棟数</dt><dd>${e.nb}棟</dd><dt>戸数</dt><dd>${(e.u||0).toLocaleString()}戸</dd><dt>建設年度</dt><dd>${yr}</dd><dt>活用手法</dt><dd>${esc(meth)}</dd></dl>
  <span class="lbl">住棟（クリックで選択）</span><ul class="blist">${mem.map(f=>`<li><button type="button" data-fid="${f.id}"><span class="sw" style="background:var(${col(f)})"></span>${esc(f.properties.n.replace(g,''))}<span style="margin-left:auto;color:var(--muted)">${f.properties.y||'–'}・${f.properties.u||'–'}戸</span></button></li>`).join('')}</ul>
  <div class="links"><a href="https://maps.gsi.go.jp/#17/${e.lat}/${e.lon}/&base=ort" target="_blank" rel="noopener">地理院地図（航空写真）</a><a href="https://www.google.com/maps?q=${e.lat},${e.lon}" target="_blank" rel="noopener">Googleマップ</a></div>
+ <button type="button" class="btn" id="orbitOne" style="align-self:flex-start">この住宅を1周見る</button>
  ${chkLink(k,g)}`,e.lon,e.lat,g);
+ document.getElementById('orbitOne').onclick=()=>tourStart([est],true);
 }
 function closeSide(){clearSel();document.getElementById('side').hidden=true;document.getElementById('detail').innerHTML='<p class="empty">建物をクリックすると、画面右側に住宅名・建設年度・耐震性・活用手法などを表示します。</p>'}
 document.getElementById('sideX').onclick=closeSide;
-addEventListener('keydown',e=>{if(e.key==='Escape')closeSide()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!TR)closeSide()});
 const btn={age:'mAge',meth:'mMeth',seis:'mSeis',flood:'mFlood'};
 for(const[m,id]of Object.entries(btn))document.getElementById(id).onclick=()=>{mode=m;for(const[k,i]of Object.entries(btn))document.getElementById(i).setAttribute('aria-pressed',k===m);recolor()};
 kuSel.onchange=()=>apply(true);document.getElementById('fl').onchange=()=>apply(false);
@@ -350,12 +379,60 @@ qEl.onkeydown=e=>{const bs=qRes.querySelectorAll('button');
 ALL.forEach(f=>{if(f.properties.xp)return;const m=f.properties.n.split(' / ').map(s=>s.normalize('NFKC').match(/住宅(.+?)号館$/)).filter(Boolean).map(x=>x[1]);
  if(!m.length)return;f.num=m.join('・');const r=f.geometry.coordinates[0];f.cen=[r.reduce((a,c)=>a+c[0],0)/r.length,r.reduce((a,c)=>a+c[1],0)/r.length]});
 let numLabels=[];
-function updNumLabels(){numLabels.forEach(m=>m.remove());numLabels=[];
+function updNumLabels(){if(TR&&TR.spin)return;numLabels.forEach(m=>m.remove());numLabels=[];
  if(map.getZoom()<15.5||!document.getElementById('nm').checked)return;
  const bb=map.getBounds(),k=kuSel.value,fo=document.getElementById('fl').checked;
- ALL.filter(f=>f.num&&bb.contains(f.cen)&&(!k||f.properties.k===k)&&passCat(f.properties)&&(!fo||(f.properties.rv||'').includes('修正'))).slice(0,300).forEach(f=>{
+ ALL.filter(f=>f.num&&bb.contains(f.cen)&&(TR?f.properties.k===TR.list[TR.i].properties.k&&f.properties.g===TR.list[TR.i].properties.g:(!k||f.properties.k===k))&&passCat(f.properties)&&(!fo||(f.properties.rv||'').includes('修正'))).slice(0,300).forEach(f=>{
   const el=document.createElement('div');el.className='nlab';el.textContent=f.num;numLabels.push(new maplibregl.Marker({element:el}).setLngLat(f.cen).addTo(map))})}
 map.on('moveend',updNumLabels);map.on('load',updNumLabels);
 document.getElementById('nm').onchange=updNumLabels;
+// ---- ツアー（住宅のまわりを1周しながら情報を出す） ----
+// TR：list=住宅（D.e の要素）の並び、i=いまの番号、one=1住宅だけ、spin=回転中、t=回った時間（秒）
+let TR=null;
+const tq=id=>document.getElementById(id);
+[...new Set(D.e.features.map(f=>f.properties.k))].forEach(k=>tq('tKu').add(new Option(k,k)));
+function estInfo(est){const e=est.properties,mem={};
+ ALL.filter(f=>f.properties.k===e.k&&f.properties.g===e.g).forEach(f=>{const p=f.properties,m=mem[p.n]||(mem[p.n]={p,st:null,rx:null});if(p.st)m.st=Math.max(m.st||0,p.st);if(p.rx!=null)m.rx=Math.max(m.rx??0,p.rx)});
+ const M=Object.values(mem),cnt=k=>{const c={};M.forEach(m=>{const v=m.p[k]||'不明';c[v]=(c[v]||0)+1});return Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([v,n])=>`${v} ${n}棟`).join('・')};
+ const sts=M.map(m=>m.st).filter(Boolean),rx=Math.max(...M.map(m=>m.rx??-1));
+ const age=y=>2026-y,yr=e.y0?(e.y0===e.y1?`${e.y0}年度（築${age(e.y0)}年）`:`${e.y0}〜${e.y1}年度（築${age(e.y1)}〜${age(e.y0)}年）`):'不明';
+ return [['区',e.k],['住棟',e.nb+'棟'],['戸数',(e.u||0).toLocaleString()+'戸'],['建設年度',yr],['階数',sts.length?(Math.min(...sts)===Math.max(...sts)?Math.max(...sts)+'階':`${Math.min(...sts)}〜${Math.max(...sts)}階`):'不明'],
+  ['耐震性',cnt('s')],['活用手法',cnt('m')],['浸水深',rx>0?`最大 ${rx} m（おおよそ${Math.ceil(rx/2.9)}階まで）`:rx===0?'浸水想定なし':'不明']]}
+function tourList(){const k=tq('tKu').value,o=tq('tOrd').value;let l=D.e.features.filter(f=>!k||f.properties.k===k);
+ const fl=f=>Math.max(-1,...ALL.filter(x=>x.properties.k===f.properties.k&&x.properties.g===f.properties.g).map(x=>x.properties.rx??-1));
+ if(o==='u')l.sort((a,b)=>(b.properties.u||0)-(a.properties.u||0));else if(o==='old')l.sort((a,b)=>(a.properties.y0||9999)-(b.properties.y0||9999));
+ else if(o==='fl'){const c=new Map(l.map(f=>[f,fl(f)]));l.sort((a,b)=>c.get(b)-c.get(a))}else l.sort((a,b)=>(a.properties.k+a.properties.g).localeCompare(b.properties.k+b.properties.g,'ja',{numeric:true}));
+ return l}
+function tourStart(list,one){if(!list.length)return;closeSide();document.body.classList.add('touring');
+ TR={list,i:0,one,spin:false,play:true,t:0,tok:0,last:0,b0:0};tq('tbar').hidden=false;tq('tcard').hidden=false;tourGo(0)}
+function tourEnd(){if(!TR)return;TR.tok++;TR=null;document.body.classList.remove('touring','rec');tq('tbar').hidden=true;tq('tcard').hidden=true;tq('recX').hidden=true;setSelE(null);
+ map.easeTo({pitch:45,padding:{top:0,bottom:0,left:0,right:0},duration:600});updEstLabels();updNumLabels()}
+function tourCard(){const est=TR.list[TR.i],e=est.properties;
+ tq('tcard').innerHTML=`<span class="eyebrow">${TR.one?'住宅のまわりを1周':`ツアー ${TR.i+1} / ${TR.list.length}`}</span><h2>${esc(e.g)}</h2><dl>${estInfo(est).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="bar"><i id="tProg"></i></div>`;
+ tq('tPos').textContent=TR.one?'':`${TR.i+1} / ${TR.list.length}`;tq('tPrev').disabled=TR.one||TR.i===0;tq('tNext').disabled=TR.one||TR.i===TR.list.length-1}
+function bboxOf(g){const r=g.type==='Polygon'?g.coordinates.flat():g.coordinates.flat(2);let a=[180,90,-180,-90];r.forEach(([x,y])=>{a=[Math.min(a[0],x),Math.min(a[1],y),Math.max(a[2],x),Math.max(a[3],y)]});return a}
+function tourGo(i){const tok=++TR.tok;TR.i=i;TR.spin=false;TR.t=0;const est=TR.list[i];setSelE(est);tourCard();
+ const b=bboxOf(est.geometry),sm=innerWidth<=640,pad=sm?{top:200,bottom:70,left:10,right:10}:{top:60,bottom:90,left:340,right:60};
+ const cam=map.cameraForBounds([[b[0],b[1]],[b[2],b[3]]],{padding:pad})||{zoom:16};
+ TR.b0=map.getBearing();const spd=+tq('tSpd').value;
+ map.flyTo({center:[(b[0]+b[2])/2,(b[1]+b[3])/2],zoom:Math.min(18,Math.max(15.6,cam.zoom-(sm?0:.35))),pitch:60,bearing:TR.b0,padding:sm?{top:180,bottom:40,left:0,right:0}:{top:0,bottom:0,left:280,right:0},duration:2600/spd,essential:true});
+ map.once('moveend',()=>{if(!TR||TR.tok!==tok)return;updEstLabels();updNumLabels();TR.spin=true;TR.last=performance.now();requestAnimationFrame(()=>spin(tok))})}
+function spin(tok){if(!TR||TR.tok!==tok)return;const now=performance.now(),dt=(now-TR.last)/1000;TR.last=now;
+ if(TR.play){TR.t+=dt*+tq('tSpd').value;const T=+tq('tSec').value,f=Math.min(1,TR.t/T);map.jumpTo({bearing:TR.b0+360*f});const pg=tq('tProg');if(pg)pg.style.width=(f*100)+'%';
+  if(f>=1){TR.spin=false;if(TR.one){setPlay(false);tq('tPlay').textContent='もう一度';return}
+   if(TR.i<TR.list.length-1){setTimeout(()=>{if(TR&&TR.tok===tok)tourGo(TR.i+1)},600);return}setPlay(false);tq('tPlay').textContent='最初から';return}}
+ requestAnimationFrame(()=>spin(tok))}
+function setPlay(v){if(!TR)return;TR.play=v;tq('tPlay').textContent=v?'一時停止':'再生'}
+tq('tPlay').onclick=()=>{if(!TR)return;if(!TR.spin&&TR.t>0){setPlay(true);tourGo(TR.one?0:TR.i===TR.list.length-1&&TR.t>=+tq('tSec').value?0:TR.i);return}setPlay(!TR.play)};
+tq('tPrev').onclick=()=>{if(TR&&TR.i>0){setPlay(true);tourGo(TR.i-1)}};
+tq('tNext').onclick=()=>{if(TR&&TR.i<TR.list.length-1){setPlay(true);tourGo(TR.i+1)}};
+tq('tEnd').onclick=tourEnd;
+tq('tRec').onclick=()=>{document.body.classList.add('rec');tq('recX').hidden=false};
+tq('recX').onclick=()=>{document.body.classList.remove('rec');tq('recX').hidden=true};
+tq('tGo').onclick=()=>tourStart(tourList(),false);
+// 地図を触ったら一時停止（自分で見回せるように）
+['mousedown','touchstart','wheel'].forEach(ev=>map.getCanvas().addEventListener(ev,()=>{if(TR&&TR.spin&&TR.play)setPlay(false)},{passive:true}));
+addEventListener('keydown',e=>{if(!TR||['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;
+ if(e.key==='Escape'){if(document.body.classList.contains('rec'))tq('recX').click();else tourEnd()}else if(e.key===' '){e.preventDefault();tq('tPlay').click()}else if(e.key==='ArrowRight')tq('tNext').click();else if(e.key==='ArrowLeft')tq('tPrev').click()});
 </script>
 </body></html>

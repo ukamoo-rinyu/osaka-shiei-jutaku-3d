@@ -3,7 +3,7 @@
 大阪市営住宅の住棟を、国土交通省 PLATEAU の建物形状・高さで立ち上げた3Dマップです。
 築年数・活用手法（市営住宅ストック総合活用計画）・耐震性・浸水リスクで色分けし、住宅名で検索できます。
 
-- 3Dマップ：`index.html`（GitHub Pages で公開）
+- 3Dマップ：`index.html`（GitHub Pages で公開）。左のパネルの「ツアー」で、住宅ごとに情報を出しながらまわりを1周する表示もできる（録画モードあり）
 - 確認・報告ページ：`check.html`（住宅ごとに号館の建物の違い・解体済み・一覧にない住棟を確認したり、3Dモデルがない住棟の直方体モデルや敷地範囲を描いたりして、Googleフォームで報告できるページ。作り直しは `python3 tools/build_check_page.py`。報告を受けて直す流れは `docs/report_workflow.md`）
 - 住棟マスタ：`data/shiei_jutaku_master.csv`（住棟ごとの建設年度・築年数・耐震性・活用手法・PLATEAU建物ID・高さ・浸水深など）
 - 浸水リスク一覧：`data/shiei_jutaku_flood_risk.csv`（上と同じ内容を浸水深の深い順に並べたもの）
