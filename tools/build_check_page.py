@@ -51,8 +51,14 @@ def main():
                 no = re.sub(r'号館$|号棟$|棟$', '', rest) or '?'
             num = lambda v: int(float(v)) if v else None
             pt = None if ids else [round(float(r['経度']), 6), round(float(r['緯度']), 6)]
+            # 3Dマップに表示している内容（疑問の報告で、いまの値として見せる）
+            fmt = lambda v, unit='': (f'{float(v):g}{unit}' if v else '')
+            at = [['戸数', fmt(r['戸数'], '戸')], ['建設年度', fmt(r['建設年度'], '年度')], ['耐震性', r['耐震性']],
+                  ['活用手法', r['活用手法'] or 'R8計画に記載なし'], ['所在地', r['所在地']], ['高さ', fmt(r['高さm（最大）'], ' m')],
+                  ['地上階数', fmt(r['地上階数（PLATEAU）'], '階')], ['構造', r['構造']], ['浸水深（最大）', fmt(r['浸水深_最大m'], ' m')]]
             estates.setdefault((r['区'], r['団地']), []).append(
-                {'n': name, 'no': no, 'u': num(r['戸数']), 'y': num(r['建設年度']), 'b': [bix[i] for i in ids], 'pt': pt})
+                {'n': name, 'no': no, 'u': num(r['戸数']), 'y': num(r['建設年度']), 'b': [bix[i] for i in ids], 'pt': pt,
+                 'at': [x for x in at if x[1]]})
 
     E = []
     for (k, g), mem in estates.items():
