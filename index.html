@@ -105,6 +105,24 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 }
 
 /* ---- ツアー（住宅のまわりを1周） ---- */
+/* テロップ（画面下に、住宅名と情報を1項目ずつ流す） */
+.telop{position:absolute;left:24px;bottom:calc(84px + env(safe-area-inset-bottom,0px));max-width:min(760px,calc(100% - 48px));z-index:5;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.tl-name{display:flex;align-items:baseline;gap:12px;background:rgb(20 26 33 / .86);color:#fff;border-left:6px solid var(--sel-line);padding:8px 18px 9px 14px;border-radius:2px 8px 8px 2px;box-shadow:0 4px 18px rgb(0 0 0 / .25)}
+.tl-name b{font-size:30px;line-height:1.2;letter-spacing:.02em}
+.tl-name .ku{font-size:14px;opacity:.85}.tl-name .no{font-size:12px;opacity:.7;font-family:var(--font-num);margin-left:6px}
+.tl-line{display:flex;align-items:baseline;gap:12px;background:rgb(255 255 255 / .95);color:#1d2733;padding:7px 16px;border-radius:2px 8px 8px 2px;border-left:6px solid #1d2733;box-shadow:0 4px 18px rgb(0 0 0 / .2);margin-left:18px;min-height:28px}
+.tl-line .k{font-size:13px;color:#5d6b7a;font-weight:700;white-space:nowrap}.tl-line .v{font-size:22px;font-weight:700;line-height:1.3}
+.tl-dots{display:flex;gap:5px;margin-left:20px}.tl-dots i{width:7px;height:7px;border-radius:50%;background:rgb(255 255 255 / .55);box-shadow:0 0 0 1px rgb(0 0 0 / .25)}.tl-dots i.on{background:var(--sel-line)}
+.tl-in{animation:tlIn .55s cubic-bezier(.2,.8,.2,1) both}
+@keyframes tlIn{from{transform:translateX(-40px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.tl-in{animation:none}}
+body.rec .telop{bottom:calc(36px + env(safe-area-inset-bottom,0px))}
+@media (max-width:640px){
+  .telop{left:8px;right:8px;max-width:none;bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+  body.rec .telop{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+  .tl-name b{font-size:22px}.tl-line{margin-left:10px}.tl-line .v{font-size:17px}
+}
+
 .tcard{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:12px;width:300px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-top:4px solid var(--sel-line);border-radius:10px;box-shadow:0 6px 24px rgb(0 0 0 / .18);padding:12px 16px 14px;z-index:5}
 .tcard .eyebrow{font-size:11px;color:var(--sel-line);letter-spacing:.08em;font-weight:700}
 .tcard h2{font-size:20px;margin:2px 0 8px;line-height:1.3}
@@ -122,13 +140,14 @@ body.rec .tcard{width:340px}body.rec .tcard h2{font-size:24px}
 @media (max-width:640px){
   .tcard{left:8px;right:8px;width:auto;padding:10px 12px 12px}.tcard h2{font-size:18px}.tcard dl{font-size:12.5px;grid-template-columns:auto 1fr auto 1fr}
   body.rec .tcard{width:auto}
-  .tbar{gap:4px;padding:5px 6px;max-width:calc(100% - 16px);overflow-x:auto}.tbar button,.tbar select{padding:5px 8px;font-size:12.5px}.tbar .pos{display:none}
+  .tbar{gap:4px;padding:6px;width:calc(100% - 16px);box-sizing:border-box;flex-wrap:wrap;justify-content:center;border-radius:14px}.tbar button,.tbar select{padding:5px 8px;font-size:12.5px}.tbar button,.tbar select{flex:none}.tbar select{min-width:6.5em}.tbar .pos{display:none}
 }
 </style>
 </head><body><div id="map" role="application" aria-label="市営住宅の3D地図"></div>
 <div class="tip" id="tip" hidden></div>
 <div class="tcard" id="tcard" hidden aria-live="polite"></div>
-<div class="tbar" id="tbar" hidden><button type="button" id="tPrev">◀ 前</button><button type="button" class="pri" id="tPlay">一時停止</button><button type="button" id="tNext">次 ▶</button><span class="pos" id="tPos"></span><select id="tSpd" aria-label="速さ"><option value="0.5">ゆっくり</option><option value="1" selected>ふつう</option><option value="2">はやい</option></select><button type="button" id="tRec">録画モード</button><button type="button" id="tEnd">終了</button></div>
+<div class="telop" id="telop" hidden aria-live="polite"><div class="tl-name" id="tlName"></div><div class="tl-line" id="tlLine" hidden></div><div class="tl-dots" id="tlDots"></div></div>
+<div class="tbar" id="tbar" hidden><button type="button" id="tPrev">◀ 前</button><button type="button" class="pri" id="tPlay">一時停止</button><button type="button" id="tNext">次 ▶</button><span class="pos" id="tPos"></span><select id="tSpd" aria-label="速さ"><option value="0.5">ゆっくり</option><option value="1" selected>ふつう</option><option value="2">はやい</option></select><select id="tSty" aria-label="情報の出し方"><option value="tel">テロップ</option><option value="card">カード</option><option value="both">両方</option></select><button type="button" id="tRec">録画モード</button><button type="button" id="tEnd">終了</button></div>
 <button type="button" class="recx" id="recX" hidden>録画モードを終える</button>
 <aside class="side info" id="side" hidden aria-live="polite"><button class="x" id="sideX" aria-label="閉じる">×</button><div id="sideBody"></div></aside>
 <div class="panel" id="panel">
@@ -403,22 +422,38 @@ function tourList(){const k=tq('tKu').value,o=tq('tOrd').value;let l=D.e.feature
  if(o==='u')l.sort((a,b)=>(b.properties.u||0)-(a.properties.u||0));else if(o==='old')l.sort((a,b)=>(a.properties.y0||9999)-(b.properties.y0||9999));
  else if(o==='fl'){const c=new Map(l.map(f=>[f,fl(f)]));l.sort((a,b)=>c.get(b)-c.get(a))}else l.sort((a,b)=>(a.properties.k+a.properties.g).localeCompare(b.properties.k+b.properties.g,'ja',{numeric:true}));
  return l}
+// 情報の出し方：tel=テロップ（画面下）、card=カード（左上）、both=両方。選んだものはブラウザに覚えておく
+try{const v=localStorage.getItem('shiei-3d-tour-style');if(v)tq('tSty').value=v}catch(e){}
+const tSty=()=>tq('tSty').value;
+function tourShow(){if(!TR)return;tq('tcard').hidden=tSty()==='tel';tq('telop').hidden=tSty()==='card'}
+tq('tSty').onchange=()=>{try{localStorage.setItem('shiei-3d-tour-style',tSty())}catch(e){}tourShow()};
+// テロップに流す項目（住宅名の下に1つずつ）
+function telopItems(est){const e=est.properties,I=Object.fromEntries(estInfo(est));
+ return [['規模',`${I['住棟']}・${I['戸数']}`],['建設年度',I['建設年度']],['階数',I['階数']],['耐震性',I['耐震性']],['活用手法',I['活用手法']],['浸水深',I['浸水深']]]}
+function telopName(){const e=TR.list[TR.i].properties,n=tq('tlName');
+ n.innerHTML=`<span class="ku">${esc(e.k)}</span><b>${esc(e.g)}</b>${TR.one?'':`<span class="no">${TR.i+1}/${TR.list.length}</span>`}`;
+ n.classList.remove('tl-in');void n.offsetWidth;n.classList.add('tl-in');tq('tlLine').hidden=true;TR.li=-1;
+ tq('tlDots').innerHTML=telopItems(TR.list[TR.i]).map(()=>'<i></i>').join('')}
+function telopLine(k){const it=telopItems(TR.list[TR.i]),l=tq('tlLine');if(TR.li===k)return;TR.li=k;
+ l.innerHTML=`<span class="k">${it[k][0]}</span><span class="v">${esc(it[k][1])}</span>`;l.hidden=false;l.classList.remove('tl-in');void l.offsetWidth;l.classList.add('tl-in');
+ tq('tlDots').querySelectorAll('i').forEach((d,j)=>d.classList.toggle('on',j===k))}
 function tourStart(list,one){if(!list.length)return;closeSide();document.body.classList.add('touring');
- TR={list,i:0,one,spin:false,play:true,t:0,tok:0,last:0,b0:0};tq('tbar').hidden=false;tq('tcard').hidden=false;tourGo(0)}
-function tourEnd(){if(!TR)return;TR.tok++;TR=null;document.body.classList.remove('touring','rec');tq('tbar').hidden=true;tq('tcard').hidden=true;tq('recX').hidden=true;setSelE(null);
+ TR={list,i:0,one,spin:false,play:true,t:0,tok:0,last:0,b0:0};tq('tbar').hidden=false;tourShow();tourGo(0)}
+function tourEnd(){if(!TR)return;TR.tok++;TR=null;document.body.classList.remove('touring','rec');tq('tbar').hidden=true;tq('tcard').hidden=true;tq('telop').hidden=true;tq('recX').hidden=true;setSelE(null);
  map.easeTo({pitch:45,padding:{top:0,bottom:0,left:0,right:0},duration:600});updEstLabels();updNumLabels()}
 function tourCard(){const est=TR.list[TR.i],e=est.properties;
  tq('tcard').innerHTML=`<span class="eyebrow">${TR.one?'住宅のまわりを1周':`ツアー ${TR.i+1} / ${TR.list.length}`}</span><h2>${esc(e.g)}</h2><dl>${estInfo(est).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="bar"><i id="tProg"></i></div>`;
  tq('tPos').textContent=TR.one?'':`${TR.i+1} / ${TR.list.length}`;tq('tPrev').disabled=TR.one||TR.i===0;tq('tNext').disabled=TR.one||TR.i===TR.list.length-1}
 function bboxOf(g){const r=g.type==='Polygon'?g.coordinates.flat():g.coordinates.flat(2);let a=[180,90,-180,-90];r.forEach(([x,y])=>{a=[Math.min(a[0],x),Math.min(a[1],y),Math.max(a[2],x),Math.max(a[3],y)]});return a}
-function tourGo(i){const tok=++TR.tok;TR.i=i;TR.spin=false;TR.t=0;const est=TR.list[i];setSelE(est);tourCard();
- const b=bboxOf(est.geometry),sm=innerWidth<=640,pad=sm?{top:200,bottom:70,left:10,right:10}:{top:60,bottom:90,left:340,right:60};
+function tourGo(i){const tok=++TR.tok;TR.i=i;TR.spin=false;TR.t=0;const est=TR.list[i];setSelE(est);tourCard();telopName();
+ const b=bboxOf(est.geometry),sm=innerWidth<=640,cd=tSty()!=='tel',tl=tSty()!=='card';
+ const pad=sm?{top:cd?200:40,bottom:tl?190:70,left:10,right:10}:{top:60,bottom:tl?200:90,left:cd?340:60,right:60};
  const cam=map.cameraForBounds([[b[0],b[1]],[b[2],b[3]]],{padding:pad})||{zoom:16};
  TR.b0=map.getBearing();const spd=+tq('tSpd').value;
- map.flyTo({center:[(b[0]+b[2])/2,(b[1]+b[3])/2],zoom:Math.min(18,Math.max(15.6,cam.zoom-(sm?0:.35))),pitch:60,bearing:TR.b0,padding:sm?{top:180,bottom:40,left:0,right:0}:{top:0,bottom:0,left:280,right:0},duration:2600/spd,essential:true});
- map.once('moveend',()=>{if(!TR||TR.tok!==tok)return;updEstLabels();updNumLabels();TR.spin=true;TR.last=performance.now();requestAnimationFrame(()=>spin(tok))})}
+ map.flyTo({center:[(b[0]+b[2])/2,(b[1]+b[3])/2],zoom:Math.min(18,Math.max(15.6,cam.zoom-(sm?0:.35))),pitch:60,bearing:TR.b0,padding:sm?{top:cd?180:0,bottom:tl?120:40,left:0,right:0}:{top:0,bottom:tl?110:0,left:cd?280:0,right:0},duration:2600/spd,essential:true});
+ map.once('moveend',()=>{if(!TR||TR.tok!==tok)return;updEstLabels();updNumLabels();telopLine(0);TR.spin=true;TR.last=performance.now();requestAnimationFrame(()=>spin(tok))})}
 function spin(tok){if(!TR||TR.tok!==tok)return;const now=performance.now(),dt=(now-TR.last)/1000;TR.last=now;
- if(TR.play){TR.t+=dt*+tq('tSpd').value;const T=+tq('tSec').value,f=Math.min(1,TR.t/T);map.jumpTo({bearing:TR.b0+360*f});const pg=tq('tProg');if(pg)pg.style.width=(f*100)+'%';
+ if(TR.play){TR.t+=dt*+tq('tSpd').value;const T=+tq('tSec').value,f=Math.min(1,TR.t/T);map.jumpTo({bearing:TR.b0+360*f});const pg=tq('tProg');if(pg)pg.style.width=(f*100)+'%';telopLine(Math.min(5,Math.floor(f*6)));
   if(f>=1){TR.spin=false;if(TR.one){setPlay(false);tq('tPlay').textContent='もう一度';return}
    if(TR.i<TR.list.length-1){setTimeout(()=>{if(TR&&TR.tok===tok)tourGo(TR.i+1)},600);return}setPlay(false);tq('tPlay').textContent='最初から';return}}
  requestAnimationFrame(()=>spin(tok))}
