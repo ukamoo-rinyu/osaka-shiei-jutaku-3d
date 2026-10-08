@@ -19,8 +19,9 @@ def main():
             if not r['住宅（団地）']:
                 continue
             n = lambda k: int(r[k] or 0)
-            # [管理戸数, 入居手続中等, 募集中, 募集準備中]
-            e[r['区'] + '|' + r['住宅（団地）']] = [n('管理戸数'), n('入居手続中等'), n('募集中'), n('募集準備中')]
+            # [管理戸数, 入居手続中等, 募集中, 募集準備中, 入居募集対象外空家（有・無・空）, 備考]
+            e[r['区'] + '|' + r['住宅（団地）']] = [n('管理戸数'), n('入居手続中等'), n('募集中'), n('募集準備中'),
+                                                  r.get('入居募集対象外空家', ''), r.get('備考', '')]
     data = json.dumps({'d': date, 'src': src.name, 'e': e}, ensure_ascii=False, separators=(',', ':'))
     tag = f'<script id="boshu" type="application/json">{data}</script>'
     p = ROOT / 'index.html'
