@@ -315,8 +315,9 @@ map.on('load',()=>{
  map.addLayer({id:'el',type:'line',source:'e',paint:{'line-color':['case',['boolean',['feature-state','sel'],false],css('--sel-line'),css('--estate')],'line-width':['case',['boolean',['feature-state','sel'],false],3.6,['boolean',['feature-state','hov'],false],3,2.2],'line-dasharray':[2,1.2],'line-opacity':1}});
  map.addSource('b',{type:'geojson',data:D.b});map.addSource('p',{type:'geojson',data:D.p});
  // ツアーで出す周辺の建物：地理院ベクトルタイルの建物（ツアー中だけ読み込む）から、住宅のまわりだけを取り出して立ち上げる
- map.addSource('gsibv',{type:'vector',tiles:['https://cyberjapandata.gsi.go.jp/xyz/experimental_bvmap/{z}/{x}/{y}.pbf'],minzoom:4,maxzoom:16,attribution:'地理院タイル（ベクトル・建物）'});
+ map.addSource('gsibv',{type:'vector',tiles:['https://cyberjapandata.gsi.go.jp/xyz/experimental_bvmap/{z}/{x}/{y}.pbf'],minzoom:4,maxzoom:16,attribution:'地理院タイル（ベクトル）'});
  map.addLayer({id:'gsibvLoad',type:'fill',source:'gsibv','source-layer':'building',layout:{visibility:'none'},paint:{'fill-opacity':0}});
+ map.addLayer({id:'gsibvLab',type:'circle',source:'gsibv','source-layer':'label',layout:{visibility:'none'},paint:{'circle-opacity':0,'circle-radius':1}});
  map.addSource('surr',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
  map.addLayer({id:'surr',type:'fill-extrusion',source:'surr',paint:{'fill-extrusion-color':css('--surr'),'fill-extrusion-height':['get','h'],'fill-extrusion-opacity':.75}});
  map.addLayer({id:'bx',type:'fill-extrusion',source:'b',paint:{'fill-extrusion-color':selColor(),'fill-extrusion-height':['get','H'],'fill-extrusion-opacity':.92,'fill-extrusion-vertical-gradient':true}});
@@ -500,7 +501,7 @@ const surrH=c=>({3101:7,3102:15,3103:40,3111:4,3112:4}[+c]||7);
 function inPoly(pt,g){const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;let ins=false;
  for(const p of polys){const r=p[0];for(let i=0,j=r.length-1;i<r.length;j=i++){const[xi,yi]=r[i],[xj,yj]=r[j];if((yi>pt[1])!==(yj>pt[1])&&pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi)ins=!ins}}return ins}
 function surrClear(){map.getSource('surr')?.setData({type:'FeatureCollection',features:[]})}
-function surrLoad(on){if(map.getLayer('gsibvLoad'))map.setLayoutProperty('gsibvLoad','visibility',on?'visible':'none')}
+function surrLoad(on){for(const id of['gsibvLoad','gsibvLab'])if(map.getLayer(id))map.setLayoutProperty(id,'visibility',on?'visible':'none')}
 function surrUpdate(){if(!TR||!SURR_R||!map.getSource('gsibv'))return;const est=TR.list[TR.i],b=bboxOf(est.geometry);
  const kx=111320*Math.cos(b[1]*Math.PI/180),ky=110950,seen=new Set(),out=[],m=(SURR_R+50)/ky;
  // まわりの住宅（団地）の敷地も含めて、市営住宅の住棟は除く（地図の住棟と重ならないように）
@@ -527,26 +528,40 @@ const POI_CAT=t=>{const a=t.amenity,b=t.building;
  if(t.office||['office','commercial'].includes(b)||t.shop==='mall'||t.shop==='department_store'||t.shop==='supermarket')return['企業・店',2,'#e0782f'];
  if(['apartments','residential','dormitory'].includes(b))return['マンション',2,'#7b2d8e'];
  if(a||t.tourism||t.leisure||b)return['その他',1,'#6b7785'];return null};
+// 施設名の取り方：① 地理院ベクトルタイルの注記（建物と同じデータなので確実に読める）、② OpenStreetMap（Overpass API）
+const OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+let OSM_FAIL=false;
+const osmQ=a=>`[out:json][timeout:25];(nwr${a}[name][amenity];nwr${a}[name][office];nwr${a}[name][building];nwr${a}[name][leisure=park];nwr${a}[name][railway=station];nwr${a}[name][public_transport=station];nwr${a}[name][shop~"^(mall|department_store|supermarket)$"];);out center 400;`;
+async function overpass(q){for(const u of OVERPASS){try{const r=await fetch(u+'?data='+encodeURIComponent(q));if(!r.ok)continue;const j=await r.json();OSM_FAIL=false;return j.elements||[]}catch(e){}}OSM_FAIL=true;throw new Error('overpass')}
+const osmItem=x=>{const t=x.tags||{},ll=x.type==='node'?[x.lon,x.lat]:x.center?[x.center.lon,x.center.lat]:null,cat=POI_CAT(t);return t.name&&ll&&cat?{nm:t.name,ll,cat,osm:1}:null};
+const GSI_PUB=/(小学校|中学校|高等学校|高校|学校|学園|大学|幼稚園|保育園|保育所|こども園|病院|医院|クリニック|役所|区役所|出張所|警察署|交番|消防署|出張所|図書館|郵便局|会館|センター|公民館|体育館|プール|老人|福祉|保健|市役所|府庁|裁判所|税務署|ホール)/;
+function gsiItems(bb){const out=[];
+ for(const f of map.querySourceFeatures('gsibv',{sourceLayer:'label'})){const p=f.properties||{},nm=p.knj||p.name;if(!nm||f.geometry.type!=='Point')continue;
+  const ll=f.geometry.coordinates;if(ll[0]<bb[0]||ll[0]>bb[2]||ll[1]<bb[1]||ll[1]>bb[3])continue;const ac=+p.annoCtg||0;
+  const cat=/駅$/.test(nm)?['駅',4,'#1d2733']:GSI_PUB.test(nm)?['公共',5,'#2f7fbf']:/(公園|緑地)$/.test(nm)?['公園',3,'#3a9a5b']:(ac>=300&&ac<500)?['その他',1,'#6b7785']:null;
+  if(cat)out.push({nm,ll,cat})}
+ return out}
+// 名前の一覧をまとめる（同じ名前は1つ、市営・府営住宅と地図の住宅の敷地の中は除く）
+function poiMerge(items,near){const seen=new Set(),out=[];for(const x of items){if(!x)continue;const k=x.nm.normalize('NFKC').replace(/\s/g,'');
+ if(seen.has(k)||/市営|府営/.test(x.nm)||near.some(f=>inPoly(x.ll,f.geometry)))continue;seen.add(k);out.push(x)}return out}
 function osmCredit(on){OSM_ON=on;tq('osmc').hidden=!on;credit(document.getElementById('bm').value)}
 function poiClear(){poiMarks.forEach(m=>m.remove());poiMarks=[];osmCredit(false)}
 async function poiShow(est,tok){poiClear();if(!poiOn)return;const e=est.properties,key=e.k+'|'+e.g,b=bboxOf(est.geometry);
  const c=[(b[0]+b[2])/2,(b[1]+b[3])/2],kx=111320*Math.cos(c[1]*Math.PI/180),half=Math.hypot((b[2]-b[0])*kx,(b[3]-b[1])*110950)/2,R=Math.round(half+(SURR_R||150));
  let els=POI_CACHE[key+'|'+R];
- if(!els){const q=`[out:json][timeout:20];(nwr(around:${R},${c[1]},${c[0]})[name][~"^(amenity|office|building|leisure|railway|public_transport|tourism|shop)$"~"."];);out center 300;`;
-  try{const r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'}});els=(await r.json()).elements||[];POI_CACHE[key+'|'+R]=els}catch(err){els=[]}}
+ if(!els){
+  try{els=await overpass(osmQ(`(around:${R},${c[1]},${c[0]})`));POI_CACHE[key+'|'+R]=els}catch(err){els=[]}}
  if(!TR||TR.tok!==tok||!poiOn)return;
  const near=D.e.features.filter(f=>{const q=f.bb||(f.bb=bboxOf(f.geometry));return Math.abs((q[0]+q[2])/2-c[0])*kx<R+300&&Math.abs((q[1]+q[3])/2-c[1])*110950<R+300});
- const seen=new Set(),list=[];
- for(const x of els){const t=x.tags||{},nm=t.name,ll=x.type==='node'?[x.lon,x.lat]:x.center?[x.center.lon,x.center.lat]:null;if(!nm||!ll)continue;
-  if(/市営|府営/.test(nm)||near.some(f=>inPoly(ll,f.geometry)))continue; // 市営住宅（地図にある住宅）は除く
-  const cat=POI_CAT(t);if(!cat||seen.has(nm))continue;seen.add(nm);
-  list.push({nm,ll,cat,d:Math.hypot((ll[0]-c[0])*kx,(ll[1]-c[1])*110950)})}
+ const rb=[c[0]-R/kx,c[1]-R/110950,c[0]+R/kx,c[1]+R/110950];
+ const list=poiMerge([...els.map(osmItem),...gsiItems(rb)],near).filter(x=>Math.hypot((x.ll[0]-c[0])*kx,(x.ll[1]-c[1])*110950)<=R);
+ list.forEach(x=>x.d=Math.hypot((x.ll[0]-c[0])*kx,(x.ll[1]-c[1])*110950));
  list.sort((a,b)=>b.cat[1]-a.cat[1]||a.d-b.d);
  // 近すぎる名前は重ならないように間引く（30m以内は1つ）
  const pick=[];for(const x of list){if(pick.length>=12)break;if(pick.some(y=>Math.hypot((x.ll[0]-y.ll[0])*kx,(x.ll[1]-y.ll[1])*110950)<30))continue;pick.push(x)}
  pick.forEach((x,i)=>{const el=document.createElement('div');el.className='plab';el.innerHTML=`<div style="animation-delay:${i*.12}s"><i style="background:${x.cat[2]}"></i>${esc(x.nm)}</div>`;el.title=x.cat[0];
   poiMarks.push(new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat(x.ll).addTo(map))});
- osmCredit(pick.length>0)}
+ osmCredit(pick.some(x=>x.osm))}
 tq('tPoi').onclick=()=>{poiOn=!poiOn;tq('tPoi').setAttribute('aria-pressed',poiOn);try{localStorage.setItem('shiei-3d-tour-poi',poiOn?'1':'0')}catch(e){}
  if(TR&&poiOn&&TR.spin)poiShow(TR.list[TR.i],TR.tok);else poiClear()};
 // ---- 周辺の建物と施設名（ふだんの表示。拡大したときだけ、画面に映っている範囲） ----
@@ -563,22 +578,20 @@ function envBuildings(bb,near){const seen=new Set(),out=[];
  map.getSource('surr').setData({type:'FeatureCollection',features:out})}
 // 施設名は約1km四方のマスごとに OpenStreetMap から取って覚えておく。画面の中心から約600mの範囲だけ出す（地図を傾けると画面の範囲が広くなるため）
 async function envCell(i,j){const k=i+'_'+j;if(ENV_CELL[k])return ENV_CELL[k];const d=.01,w=i*d,s=j*d;
- const q=`[out:json][timeout:20];nwr(${s},${w},${s+d},${w+d})[name][~"^(amenity|office|building|leisure|railway|public_transport|tourism|shop)$"~"."];out center 400;`;
- ENV_CELL[k]=fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'}}).then(r=>r.json()).then(j=>j.elements||[]).catch(()=>{delete ENV_CELL[k];return []});
+ ENV_CELL[k]=overpass(osmQ(`(${s},${w},${s+d},${w+d})`)).catch(()=>{delete ENV_CELL[k];return []});
  return ENV_CELL[k]}
 async function envPois(bb0,near,tok){const d=.01,cells=[],c0=map.getCenter(),bb=[Math.max(bb0[0],c0.lng-.0065),Math.max(bb0[1],c0.lat-.0054),Math.min(bb0[2],c0.lng+.0065),Math.min(bb0[3],c0.lat+.0054)];
  for(let i=Math.floor(bb[0]/d);i<=Math.floor(bb[2]/d);i++)for(let j=Math.floor(bb[1]/d);j<=Math.floor(bb[3]/d);j++)cells.push([i,j]);
  if(cells.length>9)return;const els=(await Promise.all(cells.map(([i,j])=>envCell(i,j)))).flat();if(tok!==envT||!envOn||TR)return;
- const c=map.getCenter(),seen=new Set(),list=[];
- for(const x of els){const t=x.tags||{},nm=t.name,ll=x.type==='node'?[x.lon,x.lat]:x.center?[x.center.lon,x.center.lat]:null;if(!nm||!ll)continue;
-  if(ll[0]<bb[0]||ll[0]>bb[2]||ll[1]<bb[1]||ll[1]>bb[3])continue;if(/市営|府営/.test(nm)||near.some(f=>inPoly(ll,f.geometry)))continue;
-  const cat=POI_CAT(t);if(!cat||seen.has(nm))continue;seen.add(nm);list.push({nm,ll,cat,d:Math.hypot(ll[0]-c.lng,ll[1]-c.lat)})}
+ const c=map.getCenter(),inb=x=>x&&x.ll[0]>=bb[0]&&x.ll[0]<=bb[2]&&x.ll[1]>=bb[1]&&x.ll[1]<=bb[3];
+ const list=poiMerge([...els.map(osmItem).filter(inb),...gsiItems(bb)],near);list.forEach(x=>x.d=Math.hypot(x.ll[0]-c.lng,x.ll[1]-c.lat));
+ tq('envZoom').textContent=OSM_FAIL?'（施設名のうち OpenStreetMap の分を読み込めませんでした。地理院地図の名前だけを出しています）':'';
  list.sort((a,b)=>b.cat[1]-a.cat[1]||a.d-b.d);
  // 画面上で70px以内に重なる名前は間引き、多くても25件
  const pick=[];for(const x of list){if(pick.length>=25)break;const pt=map.project(x.ll);if(pick.some(y=>Math.hypot(pt.x-y.pt.x,pt.y-y.pt.y)<70))continue;pick.push({...x,pt})}
  envMarks.forEach(m=>m.remove());envMarks=pick.map(x=>{const el=document.createElement('div');el.className='plab';el.innerHTML=`<div style="animation:none"><i style="background:${x.cat[2]}"></i>${esc(x.nm)}</div>`;el.title=x.cat[0];
   return new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat(x.ll).addTo(map)});
- osmCredit(pick.length>0)}
+ osmCredit(pick.some(x=>x.osm))}
 function envUpdate(){if(!envOn||TR)return;const z=map.getZoom();tq('envZoom').textContent=z<ENV_Z_B?'（いまは縮小しすぎのため表示していません）':'';
  if(z<ENV_Z_B){envClear();return}
  const b=map.getBounds(),bb=[b.getWest(),b.getSouth(),b.getEast(),b.getNorth()],near=envNear(bb),tok=envT=Symbol();
