@@ -27,6 +27,7 @@
 - 所在地の補足、入居募集対象空家：大阪市「市営住宅一覧（各区別）令和8年7月1日現在」
 - 府営住宅からの移管：大阪府「大阪市への府営住宅の移管について」
 - 建築計画のお知らせ看板：「建築計画のお知らせ看板情報」（kdb.tokyo 大阪、2019年8月〜2026年7月の届出）
+- ツアーの周辺の建物：国土地理院「地理院タイル（ベクトルタイル）」の建物。ツアーの施設名：© OpenStreetMap contributors（Overpass API で表示時に取得）
 - 背景地図：国土地理院「地理院タイル（淡色地図・全国最新写真〈シームレス〉）」
 - 区界：国土数値情報（行政区域）をもとにした GeoJSON（[niiyz/JapanCityGeoJson](https://github.com/niiyz/JapanCityGeoJson)）
 - 地図表示：[MapLibre GL JS](https://maplibre.org/)
