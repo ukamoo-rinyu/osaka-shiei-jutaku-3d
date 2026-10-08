@@ -87,6 +87,8 @@ main{position:relative;min-width:0;min-height:0}
 .sbtn.on{background:var(--add);border-color:var(--add);color:#fff}
 .warn{color:var(--ng);font-weight:700}
 .siteRow{font-size:12px}.siteRow b{color:var(--site)}
+.expbtn{font-size:13px;padding:9px 12px;border-radius:7px;border:0;background:var(--accent);color:var(--panel);font-weight:700}
+.expbtn span{font-family:var(--font-num);font-weight:400}
 .okbtn{font-size:13px;padding:8px 12px;border-radius:7px;border:2px solid var(--pick);background:transparent;color:var(--pick);font-weight:700}
 .okbtn.on{background:var(--pick);color:#fff}
 .hint{font-size:12px;color:var(--accent);font-weight:700;margin:0}
@@ -102,7 +104,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
  body{grid-template-columns:1fr;grid-template-rows:42% 58%}
  #mode,#eInfo{display:none}
  .bot{padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px));gap:4px}
- .okbtn{padding:6px 10px}
+ .okbtn,.expbtn{padding:6px 10px}
  aside{position:fixed;inset:0;z-index:15;display:none;border-right:0}
  aside.open{display:flex}
  .only-sp{display:inline-block}
@@ -133,7 +135,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
   <div class="prog"><span>確認した住宅 <b id="pDone">0</b> / <b id="pAll">0</b></span><span>報告する号館 <b id="pChg">0</b></span></div>
   <input type="search" id="q" placeholder="住宅名・区で探す" aria-label="住宅名・区で探す">
   <div class="row"><select id="fK" aria-label="区"><option value="">区：すべて</option></select><select id="fS" aria-label="状態"><option value="">状態：すべて</option><option value="none">未確認</option><option value="done">確認した住宅</option><option value="nomdl">3Dモデルがない住棟あり</option></select></div>
-  <div class="row"><button class="btn pri" id="exp" type="button">結果を出力して報告</button><button class="btn" id="reset" type="button">入力をすべて消す</button></div>
+  <div class="row"><button class="btn" id="reset" type="button">入力をすべて消す</button><span class="sub">報告は、右下の「結果を出力して報告」から</span></div>
   <p class="sub" id="resetAsk" hidden>入力をすべて消しますか？ <button class="btn" id="resetYes" type="button">消す</button> <button class="btn" id="resetNo" type="button">やめる</button></p>
  </div>
  <ul id="list"></ul>
@@ -146,14 +148,14 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 </main>
 <section class="side2">
  <div class="top"><div class="row" style="justify-content:space-between"><span class="sub" id="eKu">–</span><button class="btn only-sp" id="asideOpen" type="button">住宅を選ぶ</button></div><h2 id="eName">–</h2><span class="sub" id="eInfo"></span>
-  <div class="row"><button class="btn" id="prev" type="button">← 前</button><button class="btn" id="next" type="button">次 →</button><a class="btn" id="gsi" target="_blank" rel="noopener">航空写真</a><a class="btn" id="gmap" target="_blank" rel="noopener">Googleマップ</a><button class="btn pri only-sp" id="exp2" type="button">結果を出力</button></div></div>
+  <div class="row"><button class="btn" id="prev" type="button">← 前</button><button class="btn" id="next" type="button">次 →</button><a class="btn" id="gsi" target="_blank" rel="noopener">航空写真</a><a class="btn" id="gmap" target="_blank" rel="noopener">Googleマップ</a></div></div>
  <div class="scroll">
   <ul class="mem" id="mem"></ul>
   <p class="gl" id="addLbl" hidden>一覧にない住棟・建て替え後の住棟（追加の報告）</p>
   <ul class="mem" id="adds"></ul>
   <button class="addbtn" id="addNew" type="button">＋ 一覧にない住棟を追加</button>
  </div>
- <div class="bot"><p class="hint" id="mode"></p><div class="row siteRow"><b>敷地範囲</b><button class="sbtn" type="button" data-site="rect">長方形で描く</button><button class="sbtn" type="button" data-site="poly">多角形で描く</button><button class="sbtn" type="button" data-site="del" id="siteDel">消す</button><span class="sub" id="siteInfo"></span></div><input type="text" id="memo" placeholder="この住宅についてのメモ（任意）" aria-label="この住宅についてのメモ"><button class="okbtn" id="done" type="button">この住宅は問題なし</button></div>
+ <div class="bot"><p class="hint" id="mode"></p><div class="row siteRow"><b>敷地範囲</b><button class="sbtn" type="button" data-site="rect">長方形で描く</button><button class="sbtn" type="button" data-site="poly">多角形で描く</button><button class="sbtn" type="button" data-site="del" id="siteDel">消す</button><span class="sub" id="siteInfo"></span></div><input type="text" id="memo" placeholder="この住宅についてのメモ（任意）" aria-label="この住宅についてのメモ"><button class="okbtn" id="done" type="button">この住宅は問題なし</button><button class="expbtn" id="exp" type="button">結果を出力して報告 <span id="expN"></span></button></div>
 </section>
 <div class="out" id="out" hidden><div>
  <b style="font-size:15px">確認結果の報告</b>
@@ -222,7 +224,7 @@ function renderList(){const q=nz(document.getElementById('q').value),fk=document
   return `<li><button type="button" data-i="${i}" aria-current="${i===cur}"><span class="nm">${esc(e.g)}</span><span class="chip ${n?'chg':ok?'ok':''}">${n?'報告 '+n:ok?'問題なし':'未確認'}</span><span class="meta">${esc(e.k)}・${e.mem.length}棟${e.nm?`・<span style="color:var(--ptc)">3Dモデルなし${e.nm}棟</span>`:''}</span></button></li>`}).join('');
  document.querySelectorAll('#list button').forEach(b=>b.onclick=()=>{go(+b.dataset.i);document.getElementById('aside').classList.remove('open')});
  document.getElementById('pDone').textContent=E.filter(isDone).length;document.getElementById('pAll').textContent=E.length;
- document.getElementById('pChg').textContent=E.reduce((a,e)=>a+nChg(e),0)}
+ {const n=E.reduce((a,e)=>a+nChg(e),0),d=E.filter(isDone).length;document.getElementById('pChg').textContent=n;const r=n||d?rows().length-1:0;document.getElementById('expN').textContent=r?`（${r}件）`:''}}
 const map=new maplibregl.Map({container:'map',center:[135.5,34.67],zoom:16,pitch:0,bearing:0,maxPitch:75,attributionControl:false,
  style:{version:8,sources:{gsi:{type:'raster',tiles:['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],tileSize:256,maxzoom:18,attribution:'地理院タイル（淡色地図）'},
   photo:{type:'raster',tiles:['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],tileSize:256,maxzoom:18,attribution:'地理院タイル（全国最新写真）'}},
@@ -434,7 +436,7 @@ document.getElementById('form').hidden=!FORM_URL;if(FORM_URL)document.getElement
 const openOut=()=>{const t=report();document.getElementById('outTxt').value=t||'まだ報告する内容がありません。住宅を確認して「問題なし」や号館の修正を入力してください。';
  document.getElementById('copy').disabled=!t;document.getElementById('out').hidden=false;
  document.getElementById('copyMsg').textContent=FORM_URL?'':'（報告フォームは準備中です。CSVファイルで保存しておいてください）'};
-document.getElementById('exp').onclick=openOut;document.getElementById('exp2').onclick=openOut;
+document.getElementById('exp').onclick=openOut;
 document.getElementById('close').onclick=()=>document.getElementById('out').hidden=true;
 document.getElementById('copy').onclick=()=>{const t=document.getElementById('outTxt');navigator.clipboard.writeText(t.value).then(()=>document.getElementById('copyMsg').textContent='コピーしました。次にフォームを開いて貼り付けてください').catch(()=>{t.select();document.getElementById('copyMsg').textContent='選択しました。長押し（Ctrl+C）でコピーしてください'})};
 document.getElementById('save').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv()],{type:'text/csv'}));a.download='市営住宅3Dマップ_確認結果.csv';document.body.appendChild(a);a.click();a.remove()};
