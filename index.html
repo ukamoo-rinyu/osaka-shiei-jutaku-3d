@@ -10,14 +10,15 @@
   --accent:#2f5d8a; --sel:#ffd23f; --sel-line:#d1006f; --estate:#4b2e83;
   --c-new:#5e9f93; --c-20:#a9bf7a; --c-30:#e2bb55; --c-40:#dc8442; --c-50:#b5443a;
   --m-keep:#7f9fc4; --w0:#d9dee3; --w1:#bfe0f2; --w2:#6fb3db; --w3:#2f7fbf; --w4:#173f7a; --m-ev:#5fae88; --m-r1:#cf3f4f; --m-r2:#ee9a4f; --m-none:#a3a9b1;
-  --k7:#b2182b; --k1:#7b2d8e; --k2:#e0782f; --k5:#f3c79c; --k3:#9cc3e0; --k6:#4f5964; --k4:#e4e7ea;
+  --surr:#b7bec7; --k7:#b2182b; --k1:#7b2d8e; --k2:#e0782f; --k5:#f3c79c; --k3:#9cc3e0; --k6:#4f5964; --k4:#e4e7ea;
   --v0:#e8ebe4; --v1:#c9e6c0; --v2:#97cf8f; --v3:#5bb36a; --v4:#2b8a53; --v5:#135c3a;
   --font-ui:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
   --font-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --surr:#56606b;
   --bg:#141a21; --ground:#1a222b; --panel:#1e2731; --ink:#e6ebf0; --muted:#9aa8b6; --line:#33404d; --accent:#8db6e0; --sel-line:#ff5fa8; --estate:#c3a6ff; color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#141a21; --ground:#1a222b; --panel:#1e2731; --ink:#e6ebf0; --muted:#9aa8b6; --line:#33404d; --accent:#8db6e0; --sel-line:#ff5fa8; --estate:#c3a6ff; color-scheme:dark}
+:root[data-theme="dark"]{--surr:#56606b; --bg:#141a21; --ground:#1a222b; --panel:#1e2731; --ink:#e6ebf0; --muted:#9aa8b6; --line:#33404d; --accent:#8db6e0; --sel-line:#ff5fa8; --estate:#c3a6ff; color-scheme:dark}
 [hidden]{display:none!important}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);margin:0;overflow:hidden}
@@ -151,7 +152,7 @@ body.rec .tcard{width:340px}body.rec .tcard h2{font-size:24px}
 <div class="tip" id="tip" hidden></div>
 <div class="tcard" id="tcard" hidden aria-live="polite"></div>
 <div class="telop" id="telop" hidden aria-live="polite"><div class="tl-name" id="tlName"></div><div class="tl-line" id="tlLine" hidden></div><div class="tl-dots" id="tlDots"></div></div>
-<div class="tbar" id="tbar" hidden><button type="button" id="tPrev">◀ 前</button><button type="button" class="pri" id="tPlay">一時停止</button><button type="button" id="tNext">次 ▶</button><span class="pos" id="tPos"></span><select id="tSpd" aria-label="速さ"><option value="0.5">ゆっくり</option><option value="1" selected>ふつう</option><option value="2">はやい</option></select><select id="tSty" aria-label="情報の出し方"><option value="tel">テロップ</option><option value="card">カード</option><option value="both">両方</option></select><button type="button" id="tRec">録画モード</button><button type="button" id="tEnd">終了</button></div>
+<div class="tbar" id="tbar" hidden><button type="button" id="tPrev">◀ 前</button><button type="button" class="pri" id="tPlay">一時停止</button><button type="button" id="tNext">次 ▶</button><span class="pos" id="tPos"></span><select id="tSpd" aria-label="速さ"><option value="0.5">ゆっくり</option><option value="1" selected>ふつう</option><option value="2">はやい</option></select><select id="tSty" aria-label="情報の出し方"><option value="tel">テロップ</option><option value="card">カード</option><option value="both">両方</option></select><select id="tSur" aria-label="周辺の建物"><option value="0">周辺なし</option><option value="100">周辺100m</option><option value="150">周辺150m</option><option value="200">周辺200m</option></select><button type="button" id="tRec">録画モード</button><button type="button" id="tEnd">終了</button></div>
 <button type="button" class="recx" id="recX" hidden>録画モードを終える</button>
 <aside class="side info" id="side" hidden aria-live="polite"><button class="x" id="sideX" aria-label="閉じる">×</button><div id="sideBody"></div></aside>
 <div class="panel" id="panel">
@@ -195,7 +196,7 @@ body.rec .tcard{width:340px}body.rec .tcard h2{font-size:24px}
   <div class="sec"><span class="lbl">誤りの報告</span><p class="note" style="margin:0">建物の位置の違い・解体済み・建て替え・一覧にない住棟の追加、3Dモデルがない住棟の直方体モデルや敷地範囲は、<a href="check.html" style="color:var(--sel-line);font-weight:700">確認・報告ページ</a>から報告できます。住棟や住宅を選んだときに出るボタンからも開けます。</p>
     <div class="row"><a class="btn pri" href="check.html" style="text-decoration:none">確認・報告ページを開く</a></div></div>
   <div class="sec detail" id="detail"><p class="empty">建物をクリックすると、画面右側に住宅名・建設年度・耐震性・活用手法などを表示します。</p></div>
-  <div class="sec"><p class="note">建物形状・高さ：国土交通省 PLATEAU 大阪市（2024年度）。住棟一覧：大阪市「市営住宅一覧（位置情報付）R4.4.1」、「市営住宅ストック総合活用計画（別冊）R8.3」。築年数は2026年度時点。半透明の箱は、PLATEAUで建物を特定できなかった住棟（R4以降の新築など）を推定位置に仮の形・高さで置いたものです。敷地の点線は、同じ住宅名の住棟を囲んで描いた目安で、実際の敷地境界ではありません。入居募集対象空家：大阪市「市営住宅一覧（各区別）令和8年7月1日現在」（住宅〈団地〉ごとの数）。建替工事中・予定：「建築計画のお知らせ看板情報」（kdb.tokyo 大阪、2019年8月〜2026年7月の届出）から市営住宅の建替とみられるものを抜き出したもの。建替候補は、築年数と、この一覧での募集の有無・看板から機械的に出した目安で、市の方針ではありません。背景地図：国土地理院「地理院タイル（淡色地図・全国最新写真〈シームレス〉）」。福島区・西区は市営住宅がないため灰色。浸水深はPLATEAUの災害リスク属性（洪水浸水想定区域〈想定最大規模・計画規模〉・高潮・津波）の最大値。階の目安は1階あたり2.9mとした概算。区界：国土数値情報（行政区域）をもとにしたGeoJSON（niiyz/JapanCityGeoJson）。</p></div>
+  <div class="sec"><p class="note">建物形状・高さ：国土交通省 PLATEAU 大阪市（2024年度）。住棟一覧：大阪市「市営住宅一覧（位置情報付）R4.4.1」、「市営住宅ストック総合活用計画（別冊）R8.3」。築年数は2026年度時点。半透明の箱は、PLATEAUで建物を特定できなかった住棟（R4以降の新築など）を推定位置に仮の形・高さで置いたものです。敷地の点線は、同じ住宅名の住棟を囲んで描いた目安で、実際の敷地境界ではありません。入居募集対象空家：大阪市「市営住宅一覧（各区別）令和8年7月1日現在」（住宅〈団地〉ごとの数）。ツアーの周辺の建物：地理院タイル（ベクトルタイル）の建物の外形。高さは建物の種類からの目安。建替工事中・予定：「建築計画のお知らせ看板情報」（kdb.tokyo 大阪、2019年8月〜2026年7月の届出）から市営住宅の建替とみられるものを抜き出したもの。建替候補は、築年数と、この一覧での募集の有無・看板から機械的に出した目安で、市の方針ではありません。背景地図：国土地理院「地理院タイル（淡色地図・全国最新写真〈シームレス〉）」。福島区・西区は市営住宅がないため灰色。浸水深はPLATEAUの災害リスク属性（洪水浸水想定区域〈想定最大規模・計画規模〉・高潮・津波）の最大値。階の目安は1階あたり2.9mとした概算。区界：国土数値情報（行政区域）をもとにしたGeoJSON（niiyz/JapanCityGeoJson）。</p></div>
   <div class="credit" id="credit"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -302,6 +303,11 @@ map.on('load',()=>{
  map.addLayer({id:'ef',type:'fill',source:'e',paint:{'fill-color':css('--estate'),'fill-opacity':['case',['boolean',['feature-state','sel'],false],.45,['boolean',['feature-state','hov'],false],.38,.28]}});
  map.addLayer({id:'el',type:'line',source:'e',paint:{'line-color':['case',['boolean',['feature-state','sel'],false],css('--sel-line'),css('--estate')],'line-width':['case',['boolean',['feature-state','sel'],false],3.6,['boolean',['feature-state','hov'],false],3,2.2],'line-dasharray':[2,1.2],'line-opacity':1}});
  map.addSource('b',{type:'geojson',data:D.b});map.addSource('p',{type:'geojson',data:D.p});
+ // ツアーで出す周辺の建物：地理院ベクトルタイルの建物（ツアー中だけ読み込む）から、住宅のまわりだけを取り出して立ち上げる
+ map.addSource('gsibv',{type:'vector',tiles:['https://cyberjapandata.gsi.go.jp/xyz/experimental_bvmap/{z}/{x}/{y}.pbf'],minzoom:4,maxzoom:16,attribution:'地理院タイル（ベクトル・建物）'});
+ map.addLayer({id:'gsibvLoad',type:'fill',source:'gsibv','source-layer':'building',layout:{visibility:'none'},paint:{'fill-opacity':0}});
+ map.addSource('surr',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+ map.addLayer({id:'surr',type:'fill-extrusion',source:'surr',paint:{'fill-extrusion-color':css('--surr'),'fill-extrusion-height':['get','h'],'fill-extrusion-opacity':.75}});
  map.addLayer({id:'bx',type:'fill-extrusion',source:'b',paint:{'fill-extrusion-color':selColor(),'fill-extrusion-height':['get','H'],'fill-extrusion-opacity':.92,'fill-extrusion-vertical-gradient':true}});
  map.addLayer({id:'pt',type:'fill-extrusion',source:'p',paint:{'fill-extrusion-color':selColor(),'fill-extrusion-height':['get','H'],'fill-extrusion-opacity':.5}});
  map.addSource('sel',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
@@ -342,7 +348,7 @@ function apply(fit=true){
  if(fit&&k){const src=ALL.filter(x=>x.properties.k===k);const bb=src.reduce((b,x)=>{const p=x.properties;return[Math.min(b[0],p.lon),Math.min(b[1],p.lat),Math.max(b[2],p.lon),Math.max(b[3],p.lat)]},[999,999,-999,-999]);
    if(bb[0]<999)map.fitBounds(bb,{padding:{top:60,bottom:60,left:innerWidth>640?360:40,right:innerWidth>640?340:40},pitch:map.getPitch(),maxZoom:15.5,duration:800})}
 }
-function recolor(){map.setPaintProperty('selLine','line-color',css('--sel-line'));map.setPaintProperty('selHalo','circle-stroke-color',css('--sel-line'));
+function recolor(){map.setPaintProperty('surr','fill-extrusion-color',css('--surr'));map.setPaintProperty('selLine','line-color',css('--sel-line'));map.setPaintProperty('selHalo','circle-stroke-color',css('--sel-line'));
  map.setPaintProperty('ef','fill-color',css('--estate'));map.setPaintProperty('el','line-color',['case',['boolean',['feature-state','sel'],false],css('--sel-line'),css('--estate')]);
  map.setPaintProperty('bx','fill-extrusion-color',selColor());map.setPaintProperty('pt','fill-extrusion-color',selColor());legend()}
 function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
@@ -474,23 +480,46 @@ function telopName(){const e=TR.list[TR.i].properties,n=tq('tlName');
 function telopLine(k){const it=telopItems(TR.list[TR.i]),l=tq('tlLine');if(TR.li===k)return;TR.li=k;
  l.innerHTML=`<span class="k">${it[k][0]}</span><span class="v">${esc(it[k][1])}</span>`;l.hidden=false;l.classList.remove('tl-in');void l.offsetWidth;l.classList.add('tl-in');
  tq('tlDots').querySelectorAll('i').forEach((d,j)=>d.classList.toggle('on',j===k))}
+// ---- 周辺の建物（ツアー中） ----
+// 地理院ベクトルタイルの建物の外形。高さは種類からの目安（普通建物7m・堅ろう建物15m・高層建物40m・無壁舎4m）
+let SURR_R=150;try{const v=localStorage.getItem('shiei-3d-tour-surr');if(v!=null)SURR_R=+v}catch(e){}
+tq('tSur').value=String(SURR_R);
+const surrH=c=>({3101:7,3102:15,3103:40,3111:4,3112:4}[+c]||7);
+function inPoly(pt,g){const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;let ins=false;
+ for(const p of polys){const r=p[0];for(let i=0,j=r.length-1;i<r.length;j=i++){const[xi,yi]=r[i],[xj,yj]=r[j];if((yi>pt[1])!==(yj>pt[1])&&pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi)ins=!ins}}return ins}
+function surrClear(){map.getSource('surr')?.setData({type:'FeatureCollection',features:[]})}
+function surrLoad(on){if(map.getLayer('gsibvLoad'))map.setLayoutProperty('gsibvLoad','visibility',on?'visible':'none')}
+function surrUpdate(){if(!TR||!SURR_R||!map.getSource('gsibv'))return;const est=TR.list[TR.i],b=bboxOf(est.geometry);
+ const kx=111320*Math.cos(b[1]*Math.PI/180),ky=110950,seen=new Set(),out=[],m=(SURR_R+50)/ky;
+ // まわりの住宅（団地）の敷地も含めて、市営住宅の住棟は除く（地図の住棟と重ならないように）
+ const near=D.e.features.filter(f=>{const q=f.bb||(f.bb=bboxOf(f.geometry));return q[0]<b[2]+m*1.3&&q[2]>b[0]-m*1.3&&q[1]<b[3]+m&&q[3]>b[1]-m});
+ for(const f of map.querySourceFeatures('gsibv',{sourceLayer:'building'})){const g=f.geometry;if(g.type!=='Polygon'&&g.type!=='MultiPolygon')continue;
+  const r=g.type==='Polygon'?g.coordinates[0]:g.coordinates[0][0];if(!r||r.length<3)continue;
+  const c=[r.reduce((a,p)=>a+p[0],0)/r.length,r.reduce((a,p)=>a+p[1],0)/r.length];
+  const dx=Math.max(b[0]-c[0],0,c[0]-b[2])*kx,dy=Math.max(b[1]-c[1],0,c[1]-b[3])*ky;if(Math.hypot(dx,dy)>SURR_R)continue;
+  if(near.some(f=>inPoly(c,f.geometry)))continue;
+  const key=f.properties.ftCode+'|'+c[0].toFixed(6)+'|'+c[1].toFixed(6)+'|'+r.length;if(seen.has(key))continue;seen.add(key);
+  out.push({type:'Feature',properties:{h:surrH(f.properties.ftCode)},geometry:g})}
+ map.getSource('surr').setData({type:'FeatureCollection',features:out})}
+tq('tSur').onchange=()=>{SURR_R=+tq('tSur').value;try{localStorage.setItem('shiei-3d-tour-surr',SURR_R)}catch(e){}
+ if(!TR)return;surrLoad(SURR_R>0);if(SURR_R>0)surrUpdate();else surrClear()};
 function tourStart(list,one){if(!list.length)return;closeSide();document.body.classList.add('touring');
- TR={list,i:0,one,spin:false,play:true,t:0,tok:0,last:0,b0:0};tq('tbar').hidden=false;tourShow();tourGo(0)}
-function tourEnd(){if(!TR)return;TR.tok++;TR=null;document.body.classList.remove('touring','rec');tq('tbar').hidden=true;tq('tcard').hidden=true;tq('telop').hidden=true;tq('recX').hidden=true;setSelE(null);
+ TR={list,i:0,one,spin:false,play:true,t:0,tok:0,last:0,b0:0,su:0};surrLoad(SURR_R>0);tq('tbar').hidden=false;tourShow();tourGo(0)}
+function tourEnd(){if(!TR)return;TR.tok++;TR=null;surrLoad(false);surrClear();document.body.classList.remove('touring','rec');tq('tbar').hidden=true;tq('tcard').hidden=true;tq('telop').hidden=true;tq('recX').hidden=true;setSelE(null);
  map.easeTo({pitch:45,padding:{top:0,bottom:0,left:0,right:0},duration:600});updEstLabels();updNumLabels()}
 function tourCard(){const est=TR.list[TR.i],e=est.properties;
  tq('tcard').innerHTML=`<span class="eyebrow">${TR.one?'住宅のまわりを1周':`ツアー ${TR.i+1} / ${TR.list.length}`}</span><h2>${esc(e.g)}</h2><dl>${estInfo(est).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="bar"><i id="tProg"></i></div>`;
  tq('tPos').textContent=TR.one?'':`${TR.i+1} / ${TR.list.length}`;tq('tPrev').disabled=TR.one||TR.i===0;tq('tNext').disabled=TR.one||TR.i===TR.list.length-1}
 function bboxOf(g){const r=g.type==='Polygon'?g.coordinates.flat():g.coordinates.flat(2);let a=[180,90,-180,-90];r.forEach(([x,y])=>{a=[Math.min(a[0],x),Math.min(a[1],y),Math.max(a[2],x),Math.max(a[3],y)]});return a}
-function tourGo(i){const tok=++TR.tok;TR.i=i;TR.spin=false;TR.t=0;const est=TR.list[i];setSelE(est);tourCard();telopName();
+function tourGo(i){const tok=++TR.tok;TR.i=i;TR.spin=false;TR.t=0;const est=TR.list[i];setSelE(est);tourCard();telopName();surrClear();
  const b=bboxOf(est.geometry),sm=innerWidth<=640,cd=tSty()!=='tel',tl=tSty()!=='card';
  const pad=sm?{top:cd?200:40,bottom:tl?190:70,left:10,right:10}:{top:60,bottom:tl?200:90,left:cd?340:60,right:60};
  const cam=map.cameraForBounds([[b[0],b[1]],[b[2],b[3]]],{padding:pad})||{zoom:16};
  TR.b0=map.getBearing();const spd=+tq('tSpd').value;
  map.flyTo({center:[(b[0]+b[2])/2,(b[1]+b[3])/2],zoom:Math.min(18,Math.max(15.6,cam.zoom-(sm?0:.35))),pitch:60,bearing:TR.b0,padding:sm?{top:cd?180:0,bottom:tl?120:40,left:0,right:0}:{top:0,bottom:tl?110:0,left:cd?280:0,right:0},duration:2600/spd,essential:true});
- map.once('moveend',()=>{if(!TR||TR.tok!==tok)return;updEstLabels();updNumLabels();telopLine(0);TR.spin=true;TR.last=performance.now();requestAnimationFrame(()=>spin(tok))})}
+ map.once('moveend',()=>{if(!TR||TR.tok!==tok)return;updEstLabels();updNumLabels();telopLine(0);surrUpdate();TR.su=0;TR.spin=true;TR.last=performance.now();requestAnimationFrame(()=>spin(tok))})}
 function spin(tok){if(!TR||TR.tok!==tok)return;const now=performance.now(),dt=(now-TR.last)/1000;TR.last=now;
- if(TR.play){TR.t+=dt*+tq('tSpd').value;const T=+tq('tSec').value,f=Math.min(1,TR.t/T);map.jumpTo({bearing:TR.b0+360*f});const pg=tq('tProg');if(pg)pg.style.width=(f*100)+'%';{const n=telopItems(TR.list[TR.i]).length;telopLine(Math.min(n-1,Math.floor(f*n)))}
+ if(TR.play){TR.t+=dt*+tq('tSpd').value;const T=+tq('tSec').value,f=Math.min(1,TR.t/T);map.jumpTo({bearing:TR.b0+360*f});const pg=tq('tProg');if(pg)pg.style.width=(f*100)+'%';if(TR.t-TR.su>2.5){TR.su=TR.t;surrUpdate()}{const n=telopItems(TR.list[TR.i]).length;telopLine(Math.min(n-1,Math.floor(f*n)))}
   if(f>=1){TR.spin=false;if(TR.one){setPlay(false);tq('tPlay').textContent='もう一度';return}
    if(TR.i<TR.list.length-1){setTimeout(()=>{if(TR&&TR.tok===tok)tourGo(TR.i+1)},600);return}setPlay(false);tq('tPlay').textContent='最初から';return}}
  requestAnimationFrame(()=>spin(tok))}
