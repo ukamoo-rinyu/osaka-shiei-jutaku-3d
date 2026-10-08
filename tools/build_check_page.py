@@ -37,6 +37,15 @@ def main():
     sites = {(f['properties']['k'], f['properties']['g']): f['geometry']
              for f in embedded(ROOT / 'index.html')['e']['features']}
 
+    # 入居募集対象空家（住宅＝団地ごと。data/shiei_jutaku_boshu_*.csv の新しいもの）
+    boshu = {}
+    bf = sorted((ROOT / 'data').glob('shiei_jutaku_boshu_*.csv'))
+    if bf:
+        with open(bf[-1], encoding='utf-8-sig') as f:
+            for r in csv.DictReader(f):
+                if r['住宅（団地）']:
+                    boshu[(r['区'], r['住宅（団地）'])] = f"{r['入居募集対象空家_計']}戸（募集中 {r['募集中']}）・管理戸数 {r['管理戸数']}戸"
+
     estates = {}
     with open(ROOT / 'data' / 'shiei_jutaku_master.csv', encoding='utf-8-sig') as f:
         for r in csv.DictReader(f):
@@ -55,7 +64,8 @@ def main():
             fmt = lambda v, unit='': (f'{float(v):g}{unit}' if v else '')
             at = [['戸数', fmt(r['戸数'], '戸')], ['建設年度', fmt(r['建設年度'], '年度')], ['耐震性', r['耐震性']],
                   ['活用手法', r['活用手法'] or 'R8計画に記載なし'], ['所在地', r['所在地']], ['高さ', fmt(r['高さm（最大）'], ' m')],
-                  ['地上階数', fmt(r['地上階数（PLATEAU）'], '階')], ['構造', r['構造']], ['浸水深（最大）', fmt(r['浸水深_最大m'], ' m')]]
+                  ['地上階数', fmt(r['地上階数（PLATEAU）'], '階')], ['構造', r['構造']], ['浸水深（最大）', fmt(r['浸水深_最大m'], ' m')],
+                  ['入居募集対象空家（住宅全体）', boshu.get((r['区'], r['団地']), '')]]
             estates.setdefault((r['区'], r['団地']), []).append(
                 {'n': name, 'no': no, 'u': num(r['戸数']), 'y': num(r['建設年度']), 'b': [bix[i] for i in ids], 'pt': pt,
                  'at': [x for x in at if x[1]]})
