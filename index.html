@@ -198,6 +198,8 @@ body.rec .tcard{width:340px}body.rec .tcard h2{font-size:24px}
     <div class="row"><span class="note" style="margin:0">背景地図</span><select id="bm" aria-label="背景地図"><option value="gsi">地理院 淡色地図</option><option value="photo">地理院 航空写真</option><option value="none">なし</option></select></div>
     <p class="note" id="bmNote" hidden>この表示画面では背景地図を読み込めません。HTMLファイルを保存してブラウザで開くと表示されます。</p>
     <label class="chk"><input type="checkbox" id="exag">高さを3倍に強調（市域全体を見るとき）</label>
+    <label class="chk"><input type="checkbox" id="env">周辺の建物と施設名を表示（拡大したとき）</label>
+    <p class="note" id="envNote" hidden style="margin:0">地図を拡大すると、画面に映っている範囲の周辺の建物（灰色、高さは目安）と、公共施設・駅・公園・企業・マンションなどの名前を出します。<span id="envZoom"></span></p>
   </div>
   <div class="sec"><span class="lbl">ツアー（住宅のまわりを1周）</span><p class="note" style="margin:0">住宅ごとに、名前・戸数・階数・耐震性などを出しながら、まわりをぐるりと回って全体を見せます。住宅を選んだときの「この住宅を1周見る」からも始められます。</p>
     <div class="row"><select id="tKu" aria-label="ツアーの区"><option value="">全区</option></select><select id="tOrd" aria-label="ツアーの順番"><option value="name">住宅名の順</option><option value="u">戸数の多い順</option><option value="old">建設の古い順</option><option value="fl">浸水深の深い順</option><option value="bo">募集対象空家の多い順</option></select></div>
@@ -419,7 +421,8 @@ document.getElementById('es').onchange=e=>{const v=e.target.checked?'visible':'n
 document.getElementById('wd').onchange=e=>{const v=e.target.checked?'visible':'none';map.setLayoutProperty('wl','visibility',v);wardLabels.forEach(m=>m.getElement().hidden=!e.target.checked)};
 document.getElementById('wfill').onchange=e=>map.setLayoutProperty('wf','visibility',e.target.checked?'visible':'none');
 // スマホでは地図の出典をパネルの一番下に出す（地図の右下だとパネルと重なるため）
-const credit=v=>{document.getElementById('credit').textContent='出典：PLATEAU（国土交通省）'+(v==='gsi'?'｜地理院タイル（淡色地図）':v==='photo'?'｜地理院タイル（全国最新写真）':'')};credit(document.getElementById('bm').value);
+let OSM_ON=false;
+const credit=v=>{document.getElementById('credit').textContent='出典：PLATEAU（国土交通省）'+(v==='gsi'?'｜地理院タイル（淡色地図）':v==='photo'?'｜地理院タイル（全国最新写真）':'')+(OSM_ON?'｜施設名 © OpenStreetMap contributors':'')};credit(document.getElementById('bm').value);
 document.getElementById('bm').onchange=e=>{const v=e.target.value;map.setLayoutProperty('gsi','visibility',v==='gsi'?'visible':'none');map.setLayoutProperty('photo','visibility',v==='photo'?'visible':'none');credit(v)};
 document.getElementById('exag').onchange=e=>{const v=e.target.checked?['*',3,['get','H']]:['get','H'];map.setPaintProperty('bx','fill-extrusion-height',v);map.setPaintProperty('pt','fill-extrusion-height',v)};
 document.getElementById('tg').onclick=e=>{const p=document.getElementById('panel');p.classList.toggle('min');const min=p.classList.contains('min');e.target.textContent=min?'ひらく':'たたむ';e.target.setAttribute('aria-expanded',!min)};
@@ -524,7 +527,8 @@ const POI_CAT=t=>{const a=t.amenity,b=t.building;
  if(t.office||['office','commercial'].includes(b)||t.shop==='mall'||t.shop==='department_store'||t.shop==='supermarket')return['企業・店',2,'#e0782f'];
  if(['apartments','residential','dormitory'].includes(b))return['マンション',2,'#7b2d8e'];
  if(a||t.tourism||t.leisure||b)return['その他',1,'#6b7785'];return null};
-function poiClear(){poiMarks.forEach(m=>m.remove());poiMarks=[];tq('osmc').hidden=true}
+function osmCredit(on){OSM_ON=on;tq('osmc').hidden=!on;credit(document.getElementById('bm').value)}
+function poiClear(){poiMarks.forEach(m=>m.remove());poiMarks=[];osmCredit(false)}
 async function poiShow(est,tok){poiClear();if(!poiOn)return;const e=est.properties,key=e.k+'|'+e.g,b=bboxOf(est.geometry);
  const c=[(b[0]+b[2])/2,(b[1]+b[3])/2],kx=111320*Math.cos(c[1]*Math.PI/180),half=Math.hypot((b[2]-b[0])*kx,(b[3]-b[1])*110950)/2,R=Math.round(half+(SURR_R||150));
  let els=POI_CACHE[key+'|'+R];
@@ -542,12 +546,49 @@ async function poiShow(est,tok){poiClear();if(!poiOn)return;const e=est.properti
  const pick=[];for(const x of list){if(pick.length>=12)break;if(pick.some(y=>Math.hypot((x.ll[0]-y.ll[0])*kx,(x.ll[1]-y.ll[1])*110950)<30))continue;pick.push(x)}
  pick.forEach((x,i)=>{const el=document.createElement('div');el.className='plab';el.innerHTML=`<div style="animation-delay:${i*.12}s"><i style="background:${x.cat[2]}"></i>${esc(x.nm)}</div>`;el.title=x.cat[0];
   poiMarks.push(new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat(x.ll).addTo(map))});
- tq('osmc').hidden=!pick.length}
+ osmCredit(pick.length>0)}
 tq('tPoi').onclick=()=>{poiOn=!poiOn;tq('tPoi').setAttribute('aria-pressed',poiOn);try{localStorage.setItem('shiei-3d-tour-poi',poiOn?'1':'0')}catch(e){}
  if(TR&&poiOn&&TR.spin)poiShow(TR.list[TR.i],TR.tok);else poiClear()};
+// ---- 周辺の建物と施設名（ふだんの表示。拡大したときだけ、画面に映っている範囲） ----
+const ENV_Z_B=15.5,ENV_Z_P=16;let envOn=false,envT=null,envMarks=[];const ENV_CELL={};
+const envNear=bb=>D.e.features.filter(f=>{const q=f.bb||(f.bb=bboxOf(f.geometry));return q[0]<bb[2]&&q[2]>bb[0]&&q[1]<bb[3]&&q[3]>bb[1]});
+function envClear(){surrClear();envMarks.forEach(m=>m.remove());envMarks=[];if(!TR)osmCredit(false)}
+function envBuildings(bb,near){const seen=new Set(),out=[];
+ for(const f of map.querySourceFeatures('gsibv',{sourceLayer:'building'})){const g=f.geometry;if(g.type!=='Polygon'&&g.type!=='MultiPolygon')continue;
+  const r=g.type==='Polygon'?g.coordinates[0]:g.coordinates[0][0];if(!r||r.length<3)continue;
+  const c=[r.reduce((a,p)=>a+p[0],0)/r.length,r.reduce((a,p)=>a+p[1],0)/r.length];if(c[0]<bb[0]||c[0]>bb[2]||c[1]<bb[1]||c[1]>bb[3])continue;
+  if(near.some(f=>inPoly(c,f.geometry)))continue;
+  const key=f.properties.ftCode+'|'+c[0].toFixed(6)+'|'+c[1].toFixed(6)+'|'+r.length;if(seen.has(key))continue;seen.add(key);
+  out.push({type:'Feature',properties:{h:surrH(f.properties.ftCode)},geometry:g})}
+ map.getSource('surr').setData({type:'FeatureCollection',features:out})}
+// 施設名は約1km四方のマスごとに OpenStreetMap から取って覚えておく。画面の中心から約600mの範囲だけ出す（地図を傾けると画面の範囲が広くなるため）
+async function envCell(i,j){const k=i+'_'+j;if(ENV_CELL[k])return ENV_CELL[k];const d=.01,w=i*d,s=j*d;
+ const q=`[out:json][timeout:20];nwr(${s},${w},${s+d},${w+d})[name][~"^(amenity|office|building|leisure|railway|public_transport|tourism|shop)$"~"."];out center 400;`;
+ ENV_CELL[k]=fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'}}).then(r=>r.json()).then(j=>j.elements||[]).catch(()=>{delete ENV_CELL[k];return []});
+ return ENV_CELL[k]}
+async function envPois(bb0,near,tok){const d=.01,cells=[],c0=map.getCenter(),bb=[Math.max(bb0[0],c0.lng-.0065),Math.max(bb0[1],c0.lat-.0054),Math.min(bb0[2],c0.lng+.0065),Math.min(bb0[3],c0.lat+.0054)];
+ for(let i=Math.floor(bb[0]/d);i<=Math.floor(bb[2]/d);i++)for(let j=Math.floor(bb[1]/d);j<=Math.floor(bb[3]/d);j++)cells.push([i,j]);
+ if(cells.length>9)return;const els=(await Promise.all(cells.map(([i,j])=>envCell(i,j)))).flat();if(tok!==envT||!envOn||TR)return;
+ const c=map.getCenter(),seen=new Set(),list=[];
+ for(const x of els){const t=x.tags||{},nm=t.name,ll=x.type==='node'?[x.lon,x.lat]:x.center?[x.center.lon,x.center.lat]:null;if(!nm||!ll)continue;
+  if(ll[0]<bb[0]||ll[0]>bb[2]||ll[1]<bb[1]||ll[1]>bb[3])continue;if(/市営|府営/.test(nm)||near.some(f=>inPoly(ll,f.geometry)))continue;
+  const cat=POI_CAT(t);if(!cat||seen.has(nm))continue;seen.add(nm);list.push({nm,ll,cat,d:Math.hypot(ll[0]-c.lng,ll[1]-c.lat)})}
+ list.sort((a,b)=>b.cat[1]-a.cat[1]||a.d-b.d);
+ // 画面上で70px以内に重なる名前は間引き、多くても25件
+ const pick=[];for(const x of list){if(pick.length>=25)break;const pt=map.project(x.ll);if(pick.some(y=>Math.hypot(pt.x-y.pt.x,pt.y-y.pt.y)<70))continue;pick.push({...x,pt})}
+ envMarks.forEach(m=>m.remove());envMarks=pick.map(x=>{const el=document.createElement('div');el.className='plab';el.innerHTML=`<div style="animation:none"><i style="background:${x.cat[2]}"></i>${esc(x.nm)}</div>`;el.title=x.cat[0];
+  return new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat(x.ll).addTo(map)});
+ osmCredit(pick.length>0)}
+function envUpdate(){if(!envOn||TR)return;const z=map.getZoom();tq('envZoom').textContent=z<ENV_Z_B?'（いまは縮小しすぎのため表示していません）':'';
+ if(z<ENV_Z_B){envClear();return}
+ const b=map.getBounds(),bb=[b.getWest(),b.getSouth(),b.getEast(),b.getNorth()],near=envNear(bb),tok=envT=Symbol();
+ envBuildings(bb,near);if(z>=ENV_Z_P)envPois(bb,near,tok);else{envMarks.forEach(m=>m.remove());envMarks=[];osmCredit(false)}}
+let envDeb=null;const envSoon=()=>{clearTimeout(envDeb);envDeb=setTimeout(envUpdate,500)};
+map.on('moveend',envSoon);map.on('sourcedata',e=>{if(envOn&&!TR&&e.sourceId==='gsibv'&&e.isSourceLoaded)envSoon()});
+document.getElementById('env').onchange=e=>{envOn=e.target.checked;tq('envNote').hidden=!envOn;if(TR)return;surrLoad(envOn);if(envOn)envUpdate();else envClear()};
 function tourStart(list,one){if(!list.length)return;closeSide();document.body.classList.add('touring');
- TR={list,i:0,one,spin:false,play:true,t:0,tok:0,last:0,b0:0,su:0};surrLoad(SURR_R>0);tq('tbar').hidden=false;tourShow();tourGo(0)}
-function tourEnd(){if(!TR)return;TR.tok++;TR=null;surrLoad(false);surrClear();poiClear();document.body.classList.remove('touring','rec');tq('tbar').hidden=true;tq('tcard').hidden=true;tq('telop').hidden=true;tq('recX').hidden=true;setSelE(null);
+ envClear();TR={list,i:0,one,spin:false,play:true,t:0,tok:0,last:0,b0:0,su:0};surrLoad(SURR_R>0);tq('tbar').hidden=false;tourShow();tourGo(0)}
+function tourEnd(){if(!TR)return;TR.tok++;TR=null;surrLoad(envOn);surrClear();poiClear();envSoon();document.body.classList.remove('touring','rec');tq('tbar').hidden=true;tq('tcard').hidden=true;tq('telop').hidden=true;tq('recX').hidden=true;setSelE(null);
  map.easeTo({pitch:45,padding:{top:0,bottom:0,left:0,right:0},duration:600});updEstLabels();updNumLabels()}
 function tourCard(){const est=TR.list[TR.i],e=est.properties;
  tq('tcard').innerHTML=`<span class="eyebrow">${TR.one?'住宅のまわりを1周':`ツアー ${TR.i+1} / ${TR.list.length}`}</span><h2>${esc(e.g)}</h2><dl>${estInfo(est).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="bar"><i id="tProg"></i></div>`;
