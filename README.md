@@ -7,6 +7,7 @@
 - 確認・報告ページ：`check.html`（住宅ごとに号館の建物の違い・解体済み・一覧にない住棟を確認したり、3Dモデルがない住棟の直方体モデルや敷地範囲を描いたりして、Googleフォームで報告できるページ。作り直しは `python3 tools/build_check_page.py`。報告を受けて直す流れは `docs/report_workflow.md`）
 - 住棟マスタ：`data/shiei_jutaku_master.csv`（住棟ごとの建設年度・築年数・耐震性・活用手法・PLATEAU建物ID・高さ・浸水深など）
 - 入居募集対象空家：`data/shiei_jutaku_boshu_R080701.csv`（市営住宅一覧〈各区別〉R8.7.1 の住宅ごとの管理戸数・入居手続中等・募集中・募集準備中・入居募集対象外空家・備考。対応づけの根拠は `tools/boshu_r080701_map.py`、地図への反映は `tools/build_boshu.py`）
+- 建築計画のお知らせ看板：`data/kanban_shiei_kdb.csv`（「建築計画のお知らせ看板情報」kdb.tokyo 大阪の検索結果から、市営住宅の建替とみられる49件を抜き出し、マップの住宅に対応づけたもの。地図への反映は `tools/build_kanban.py`）
 - 浸水リスク一覧：`data/shiei_jutaku_flood_risk.csv`（上と同じ内容を浸水深の深い順に並べたもの）
 - 確認用ツール：`tools/`（PLATEAU建物との対応づけを目視で確認・補正するために使ったHTMLと、確認・報告ページを作るスクリプト）
 
@@ -25,6 +26,7 @@
 - 建設年度・耐震性・活用手法：大阪市「大阪市営住宅ストック総合活用計画（別冊）住棟別活用手法（令和8年3月）」
 - 所在地の補足、入居募集対象空家：大阪市「市営住宅一覧（各区別）令和8年7月1日現在」
 - 府営住宅からの移管：大阪府「大阪市への府営住宅の移管について」
+- 建築計画のお知らせ看板：「建築計画のお知らせ看板情報」（kdb.tokyo 大阪、2019年8月〜2026年7月の届出）
 - 背景地図：国土地理院「地理院タイル（淡色地図・全国最新写真〈シームレス〉）」
 - 区界：国土数値情報（行政区域）をもとにした GeoJSON（[niiyz/JapanCityGeoJson](https://github.com/niiyz/JapanCityGeoJson)）
 - 地図表示：[MapLibre GL JS](https://maplibre.org/)
