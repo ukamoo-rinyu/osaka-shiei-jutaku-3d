@@ -29,31 +29,37 @@ function adCrop(){const c=map.getCanvas(),[W,H]=AD_SIZE[adQ('adFmt').value],r=W/
  return{x:(c.width-w)/2,y:(c.height-h)/2,w,h,W,H,dpr:c.width/c.clientWidth}}
 const adWait=(ms)=>new Promise(r=>setTimeout(r,ms));
 function adIdle(tok){return new Promise(res=>{let done=false;const fin=()=>{if(!done){done=true;res()}};map.once('idle',fin);setTimeout(fin,9000)})}
+// 準備中は、画像の場所に「準備中」と出す
+function adWaitCv(){const cv=adQ('adCv'),[W,H]=AD_SIZE[adQ('adFmt').value];cv.width=W;cv.height=H;const x=cv.getContext('2d');x.fillStyle='#0b1020';x.fillRect(0,0,W,H);
+ x.fillStyle='rgba(255,255,255,.75)';x.font=`600 ${W/40}px ${AD_FONT}`;x.textAlign='center';x.textBaseline='middle';x.fillText('地図を撮影しています…',W/2,H/2)}
 async function adShoot(){const tok=++AD.tok,est=AD.est;if(!est)return;const e=est.properties;
- adQ('adMsg').textContent='地図を準備しています…';adPrepare();adBase(adQ('adBg').value);
+ adQ('adMsg').textContent='地図を準備しています…';adWaitCv();adPrepare();adBase(adQ('adBg').value);
  const b=bboxOf(est.geometry),cr=adCrop(),cw=cr.w/cr.dpr,ch=cr.h/cr.dpr,mw=map.getCanvas().clientWidth,mh=map.getCanvas().clientHeight;
  // 住宅が切り取り範囲の幅の3分の1くらいで、下寄り（上から7割くらい）に入るように
  const px=(mw-cw)/2+cw*.34,py=(mh-ch)/2+ch*.35;
  const cam=map.cameraForBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{left:px,right:px,top:py,bottom:py},bearing:AD.b,pitch:52})||{zoom:16.5};
  map.easeTo({center:[(b[0]+b[2])/2,(b[1]+b[3])/2],zoom:Math.min(16.7,Math.max(15,cam.zoom)),pitch:52,bearing:AD.b,offset:[0,ch*.2],duration:0});
  await adIdle(tok);if(tok!==AD.tok)return;
- surrUpdate(est,350);adQ('adMsg').textContent='周りの施設名を集めています…';
- await adPois(est);if(tok!==AD.tok)return;
- await adIdle(tok);await adWait(150);if(tok!==AD.tok)return;
- AD.rails=adRails();
+ surrUpdate(est,350);await adIdle(tok);await adWait(150);if(tok!==AD.tok)return;
+ AD.rails=adRails();AD.pois=adGsi(est);AD.osm=false;
  // 出力の幅に足りないとき（スマホなど）は、撮影のあいだだけ地図を細かく描く
  const pr0=map.getPixelRatio(),need=AD_SIZE[adQ('adFmt').value][0]/cw;
  if(need>pr0){map.setPixelRatio(Math.min(need,8192/mw,8192/mh));await adWait(60)}
- // 地図の絵は、描き終わった直後（render）にだけ読み出せる
+ // 地図の絵は、描き終わった直後（render）に読み出す
  await new Promise(res=>{map.once('render',()=>{const cr2=adCrop(),c=document.createElement('canvas');c.width=cr2.w;c.height=cr2.h;c.getContext('2d').drawImage(map.getCanvas(),cr2.x,cr2.y,cr2.w,cr2.h,0,0,cr2.w,cr2.h);AD.img=c;AD.cr=cr2;res()});map.triggerRepaint()});
  if(map.getPixelRatio()!==pr0)map.setPixelRatio(pr0);
  if(tok!==AD.tok)return;
- AD.poly=adPoly(est);adQ('adMsg').textContent='';adRender()}
-async function adPois(est){const e=est.properties,key=e.k+'|'+e.g,b=bboxOf(est.geometry),c=[(b[0]+b[2])/2,(b[1]+b[3])/2],kx=111320*Math.cos(c[1]*Math.PI/180),R=500;
- let els=POI_CACHE[key+'|'+R];if(!els){try{els=await overpass(osmQ(`(around:${R},${c[1]},${c[0]})`));POI_CACHE[key+'|'+R]=els}catch(err){els=[]}}
+ // まず地理院地図の名前だけで描き、OpenStreetMap の名前は届いてから描き直す
+ AD.poly=adPoly(est);adRender();adQ('adMsg').textContent='周りの施設名（OpenStreetMap）を読み込み中…先に地理院地図の名前だけで描いています';
+ await adOsm(est);if(tok!==AD.tok)return;
+ adQ('adMsg').textContent=OSM_FAIL?'OpenStreetMap の施設名を読み込めませんでした（地理院地図の名前だけで描いています）':'';adRender()}
+const adArea=est=>{const e=est.properties,b=bboxOf(est.geometry),c=[(b[0]+b[2])/2,(b[1]+b[3])/2],kx=111320*Math.cos(c[1]*Math.PI/180),R=500;
  const near=D.e.features.filter(f=>{const q=f.bb||(f.bb=bboxOf(f.geometry));return Math.abs((q[0]+q[2])/2-c[0])*kx<R+300&&Math.abs((q[1]+q[3])/2-c[1])*110950<R+300});
- const rb=[c[0]-R/kx,c[1]-R/110950,c[0]+R/kx,c[1]+R/110950];
- AD.pois=poiMerge([...els.map(osmItem),...gsiItems(rb)],near).filter(x=>x.nm!==e.g);AD.osm=AD.pois.some(x=>x.osm)}
+ return{e,c,R,near,rb:[c[0]-R/kx,c[1]-R/110950,c[0]+R/kx,c[1]+R/110950],key:e.k+'|'+e.g+'|'+R}};
+function adGsi(est){const A=adArea(est);AD.gsi=gsiItems(A.rb);return poiMerge(AD.gsi,A.near).filter(x=>x.nm!==A.e.g)}
+async function adOsm(est){const A=adArea(est);let els=POI_CACHE[A.key];
+ if(!els){try{els=await overpass(osmQ(`(around:${A.R},${A.c[1]},${A.c[0]})`));POI_CACHE[A.key]=els}catch(err){els=[]}}
+ AD.pois=poiMerge([...els.map(osmItem),...(AD.gsi||[])],A.near).filter(x=>x.nm!==A.e.g);AD.osm=AD.pois.some(x=>x.osm)}
 function adRails(){if(!map.getSource('gsibv'))return[];const out=[];
  try{for(const f of map.querySourceFeatures('gsibv',{sourceLayer:'railway'})){const g=f.geometry;if(g.type==='LineString')out.push(g.coordinates);else if(g.type==='MultiLineString')out.push(...g.coordinates)}}catch(e){}
  return out}
