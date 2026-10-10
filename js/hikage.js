@@ -94,6 +94,10 @@ function hkOpen(k,g,n){if(TR)tourEnd();
  hkRun(true)}
 function hkClose(){HKS=null;hkDraw();tq('hkBox').hidden=true}
 tq('hkX').onclick=hkClose;
+// メニューをたたむ（線は地図に残したまま、題名と「ひらく」だけにする）。たたんだかどうかはブラウザに覚えておく
+function hkMinSet(on){tq('hkBox').classList.toggle('min',on);const b=tq('hkMin');b.textContent=on?'ひらく':'たたむ';b.setAttribute('aria-expanded',!on);try{localStorage.setItem('shiei-3d-hk-min',on?'1':'')}catch(e){}}
+tq('hkMin').onclick=()=>hkMinSet(!tq('hkBox').classList.contains('min'));
+try{if(localStorage.getItem('shiei-3d-hk-min'))hkMinSet(true)}catch(e){}
 for(const id of['hkMh','hkDt'])tq(id).onchange=()=>hkRun(false);
 for(const id of['hkHeat','hkHr','hkIso'])tq(id).onchange=hkDraw;
 tq('hkLeg').innerHTML=`<span>時刻別：</span>${HK_HC.map((c,i)=>`<i style="color:${c}">${i+8}</i>`).join('')}<br><span>等時間：</span>${HK_LV.map(([l,c])=>`<i style="color:${c}">${l}h</i>`).join('')}`;
