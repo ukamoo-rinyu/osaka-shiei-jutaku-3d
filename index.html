@@ -115,6 +115,21 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 /* ツアーで出す周辺の施設名 */
 .plab{pointer-events:none}.plab>div{display:flex;align-items:center;gap:5px;background:rgb(255 255 255 / .92);color:#1d2733;border-radius:999px;padding:2px 9px 2px 5px;font:700 11.5px var(--font-ui);box-shadow:0 2px 8px rgb(0 0 0 / .25);white-space:nowrap;animation:tlIn .5s both}
 .plab i{width:9px;height:9px;border-radius:50%;flex:none}
+/* 日影図 */
+.hkbox{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:6;width:min(440px,calc(100% - 24px));box-sizing:border-box;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 18px rgb(0 0 0 / .18);padding:10px 12px;font-size:12.5px;line-height:1.55}
+.hkbox h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;gap:8px;align-items:center}.hkbox h3 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hkbox .row{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:4px 0}.hkbox label{display:inline-flex;gap:4px;align-items:center}
+.hkbox select{font:inherit;padding:2px 4px}.hkbox .leg i{font-style:normal;font-weight:700;margin-right:6px}.hkbox .leg span{color:var(--muted)}
+.hkbox .x{border:0;background:none;font-size:18px;cursor:pointer;color:var(--muted);padding:0 4px}
+.hklab{font:700 11px/1 var(--font-num,system-ui);background:rgb(255 255 255 / .9);border:1.5px solid;border-radius:4px;padding:2px 4px;pointer-events:none;white-space:nowrap}.hklab.s{font-size:10px;font-weight:600;border-width:1px;padding:1px 3px}
+@media (max-width:640px){.hkbox{top:8px;font-size:12px}}
+/* 広告風画像メーカー */
+.adbox{position:fixed;inset:0;z-index:40;background:rgb(10 14 22 / .78);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+.adbox .in{background:var(--panel);color:var(--ink);border-radius:14px;max-width:1100px;width:100%;max-height:100%;overflow:auto;padding:12px 14px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;font-size:12.5px}
+.adbox h3{margin:0;font-size:15px;display:flex;justify-content:space-between;align-items:center}.adbox .x{border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
+.adbox canvas{width:100%;height:auto;max-height:62vh;object-fit:contain;background:#0b1020;border-radius:8px}
+.adbox .row{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}.adbox label{display:inline-flex;gap:4px;align-items:center}.adbox input[type=text]{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg,#fff);color:inherit}
+.adbox select{font:inherit;padding:3px 4px}.adbox .pri{background:var(--accent);color:#fff;border-color:var(--accent)}
 .osmc{position:absolute;right:56px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:4;font-size:10.5px;color:#333;background:rgb(255 255 255 / .8);border-radius:4px;padding:1px 6px}
 body.rec .osmc{right:8px}
 @media (max-width:640px){.osmc{right:8px;bottom:calc(100px + env(safe-area-inset-bottom,0px))}.plab>div{font-size:10.5px}}
@@ -161,6 +176,30 @@ body.rec .tcard{width:340px}body.rec .tcard h2{font-size:24px}
 <div class="tip" id="tip" hidden></div>
 <div class="tcard" id="tcard" hidden aria-live="polite"></div>
 <div class="telop" id="telop" hidden aria-live="polite"><div class="tl-name" id="tlName"></div><div class="tl-line" id="tlLine" hidden></div><div class="tl-dots" id="tlDots"></div></div>
+<div class="adbox" id="adBox" hidden role="dialog" aria-label="広告風画像メーカー"><div class="in">
+ <h3><span>広告風画像メーカー</span><button type="button" class="x" id="adX" aria-label="閉じる">×</button></h3>
+ <canvas id="adCv" width="1600" height="900"></canvas>
+ <div id="adMsg" style="color:var(--muted)"></div>
+ <div class="row"><label style="flex:1 1 320px">コピー <input type="text" id="adCopy" style="flex:1"></label><label style="flex:0 1 200px">ロゴ <input type="text" id="adLogo" style="flex:1;min-width:0"></label></div>
+ <div class="row">
+  <label>形 <select id="adFmt"><option value="wide">横長（16:9）</option><option value="sq">正方形</option><option value="tall">縦長（4:5）</option></select></label>
+  <label>背景 <select id="adBg"><option value="photo">航空写真</option><option value="gsi">淡色地図</option></select></label>
+  <label>雰囲気 <select id="adTone"><option value="night">夜</option><option value="day">昼</option></select></label>
+  <label>施設名 <select id="adN"><option value="0">なし</option><option value="5">5件まで</option><option value="8" selected>8件まで</option><option value="12">12件まで</option></select></label>
+  <label><input type="checkbox" id="adRail" checked>鉄道の線を光らせる</label>
+ </div>
+ <div class="row"><button type="button" class="btn" id="adL">⟲ 向きを変える</button><button type="button" class="btn" id="adR">向きを変える ⟳</button><button type="button" class="btn" id="adRe">撮り直す</button><button type="button" class="btn pri" id="adSave">画像を保存（PNG）</button></div>
+ <div style="color:var(--muted);font-size:11px">地図をその場で撮影して作ります。施設名は地理院地図と OpenStreetMap から自動で選ぶので、抜けや古い名前があることがあります。できた画像には「イメージ画像で、実在の広告・入居募集とは関係ない」旨の注意書きが入ります。</div>
+</div></div>
+<div class="hkbox" id="hkBox" hidden role="dialog" aria-label="日影図">
+ <h3><span>日影図：<b id="hkTtl"></b></span><button type="button" class="x" id="hkX" aria-label="日影図を閉じる">×</button></h3>
+ <div class="row"><label>測定面の高さ <select id="hkMh"><option value="0">0 m（地面）</option><option value="1.5">1.5 m</option><option value="4" selected>4 m</option><option value="6.5">6.5 m</option></select></label>
+  <label>計算の刻み <select id="hkDt"><option value="5">5分</option><option value="10" selected>10分</option><option value="15">15分</option></select></label></div>
+ <div class="row"><label><input type="checkbox" id="hkHeat" checked>日影時間の濃淡</label><label><input type="checkbox" id="hkHr" checked>時刻別日影線</label><label><input type="checkbox" id="hkIso" checked>等時間日影線</label></div>
+ <div class="row leg" id="hkLeg"></div>
+ <div id="hkMsg"></div>
+ <div style="color:var(--muted);font-size:11px;margin-top:4px">冬至日の真太陽時8〜16時、北緯35°で計算（日影図チェッカーと同じ式）。建物の形と高さはPLATEAU（推定位置の住棟は仮の箱）。地面の高低差・周りの建物は考えていません。目安で、法令の判定ではありません。</div>
+</div>
 <div class="tbar" id="tbar" hidden><button type="button" id="tPrev">◀ 前</button><button type="button" class="pri" id="tPlay">一時停止</button><button type="button" id="tNext">次 ▶</button><span class="pos" id="tPos"></span><select id="tSpd" aria-label="速さ"><option value="0.5">ゆっくり</option><option value="1" selected>ふつう</option><option value="2">はやい</option></select><select id="tSty" aria-label="情報の出し方"><option value="tel">テロップ</option><option value="card">カード</option><option value="both">両方</option></select><button type="button" id="tPoi" aria-pressed="true">施設名</button><select id="tSur" aria-label="周辺の建物"><option value="0">周辺なし</option><option value="100">周辺100m</option><option value="150">周辺150m</option><option value="200">周辺200m</option></select><button type="button" id="tRec">録画モード</button><button type="button" id="tEnd">終了</button></div>
 <div class="osmc" id="osmc" hidden>施設名 © OpenStreetMap contributors</div>
 <button type="button" class="recx" id="recX" hidden>録画モードを終える</button>
@@ -346,6 +385,7 @@ map.on('load',()=>{
  // ツアーで出す周辺の建物：地理院ベクトルタイルの建物（ツアー中だけ読み込む）から、住宅のまわりだけを取り出して立ち上げる
  map.addSource('gsibv',{type:'vector',tiles:['https://cyberjapandata.gsi.go.jp/xyz/experimental_bvmap/{z}/{x}/{y}.pbf'],minzoom:4,maxzoom:16,attribution:'地理院タイル（ベクトル）'});
  map.addLayer({id:'gsibvLoad',type:'fill',source:'gsibv','source-layer':'building',layout:{visibility:'none'},paint:{'fill-opacity':0}});
+ map.addLayer({id:'gsibvRail',type:'line',source:'gsibv','source-layer':'railway',layout:{visibility:'none'},paint:{'line-opacity':0}});
  map.addLayer({id:'gsibvLab',type:'circle',source:'gsibv','source-layer':'label',layout:{visibility:'none'},paint:{'circle-opacity':0,'circle-radius':1}});
  map.addSource('surr',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
  map.addLayer({id:'surr',type:'fill-extrusion',source:'surr',paint:{'fill-extrusion-color':css('--surr'),'fill-extrusion-height':['get','h'],'fill-extrusion-opacity':.75}});
@@ -426,8 +466,10 @@ function pick(f,src){
  const sib=est&&est.properties.nb>1?`<button type="button" class="x2" id="toEst" style="font:inherit;font-size:12.5px;border:0;background:none;color:var(--accent);cursor:pointer;padding:0;text-align:left;text-decoration:underline">${esc(p.g)}（${est.properties.nb}棟）のまとめを見る</button>`:'';
  show(`<span class="eyebrow">選択中の住棟</span><h2>${esc(p.n)}</h2><dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>${det}${sib}
  <div class="links"><a href="https://maps.gsi.go.jp/#18/${p.lat}/${p.lon}/&base=ort" target="_blank" rel="noopener">地理院地図（航空写真）</a><a href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank" rel="noopener">Googleマップ</a></div>
+ <button type="button" class="btn" id="hkOne" style="align-self:flex-start">この号館の日影図</button>
  ${chkLink(p.k,p.g,p.n,src==='p')}`,p.lon,p.lat,p.n);
  const t=document.getElementById('toEst');if(t)t.onclick=()=>pickEstate(p.k,p.g);
+ document.getElementById('hkOne').onclick=()=>hkOpen(p.k,p.g,p.n);
 }
 function pickEstate(k,g){
  clearSel();const est=estateOf(k,g);if(!est)return;setSelE(est);
@@ -438,9 +480,10 @@ function pickEstate(k,g){
  show(`<span class="eyebrow">住宅（団地）のまとめ</span><h2>${esc(g)}</h2><dl><dt>区</dt><dd>${esc(k)}</dd><dt>住棟数</dt><dd>${e.nb}棟</dd><dt>戸数</dt><dd>${(e.u||0).toLocaleString()}戸</dd><dt>建設年度</dt><dd>${yr}</dd><dt>活用手法</dt><dd>${esc(meth)}</dd>${(b=>`<dt>入居募集対象空家</dt><dd>${esc(boTxt(b))}<br><span style="color:var(--muted);font-size:11.5px">${b?'管理戸数 '+b[0]+'戸・':''}${esc(BO.d)}</span></dd>`)(boOf(k,g))}<dt>交通</dt><dd>${esc(ktTxt(ktOf(k,g)))}${(l=>l&&l.length>1?`<br><span style="color:var(--muted);font-size:11.5px">一覧の記載：${esc(l.map(ktOne).join('／'))}</span>`:'')(ktOf(k,g))}</dd>${(l=>l.length?`<dt>建築計画の看板</dt><dd>${esc(kbTxt(l))}</dd>`:'')(kbOf(k,g))}${(n=>n?`<dt>建替候補</dt><dd>築${RBTH}年以上で募集なしの住棟 ${n}棟</dd>`:'')(mem.filter(f=>['c1','c2'].includes(f.properties.kb)).length)}</dl>
  <span class="lbl">住棟（クリックで選択）</span><ul class="blist">${mem.map(f=>`<li><button type="button" data-fid="${f.id}"><span class="sw" style="background:var(${col(f)})"></span>${esc(f.properties.n.replace(g,''))}<span style="margin-left:auto;color:var(--muted)">${f.properties.y||'–'}・${f.properties.u||'–'}戸</span></button></li>`).join('')}</ul>
  <div class="links"><a href="https://maps.gsi.go.jp/#17/${e.lat}/${e.lon}/&base=ort" target="_blank" rel="noopener">地理院地図（航空写真）</a><a href="https://www.google.com/maps?q=${e.lat},${e.lon}" target="_blank" rel="noopener">Googleマップ</a></div>
- <button type="button" class="btn" id="orbitOne" style="align-self:flex-start">この住宅を1周見る</button>
+ <div style="display:flex;flex-wrap:wrap;gap:6px"><button type="button" class="btn" id="orbitOne">この住宅を1周見る</button><button type="button" class="btn" id="hkAll">住宅全体の日影図</button><button type="button" class="btn" id="adMake">広告風の画像を作る</button></div>
  ${chkLink(k,g)}`,e.lon,e.lat,g);
  document.getElementById('orbitOne').onclick=()=>tourStart([est],true);
+ document.getElementById('hkAll').onclick=()=>hkOpen(k,g);document.getElementById('adMake').onclick=()=>adOpen(est);
 }
 function closeSide(){clearSel();document.getElementById('side').hidden=true;document.getElementById('detail').innerHTML='<p class="empty">建物をクリックすると、画面右側に住宅名・建設年度・耐震性・活用手法などを表示します。</p>'}
 document.getElementById('sideX').onclick=closeSide;
@@ -532,14 +575,15 @@ function inPoly(pt,g){const polys=g.type==='Polygon'?[g.coordinates]:g.coordinat
  for(const p of polys){const r=p[0];for(let i=0,j=r.length-1;i<r.length;j=i++){const[xi,yi]=r[i],[xj,yj]=r[j];if((yi>pt[1])!==(yj>pt[1])&&pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi)ins=!ins}}return ins}
 function surrClear(){map.getSource('surr')?.setData({type:'FeatureCollection',features:[]})}
 function surrLoad(on){for(const id of['gsibvLoad','gsibvLab'])if(map.getLayer(id))map.setLayoutProperty(id,'visibility',on?'visible':'none')}
-function surrUpdate(){if(!TR||!SURR_R||!map.getSource('gsibv'))return;const est=TR.list[TR.i],b=bboxOf(est.geometry);
- const kx=111320*Math.cos(b[1]*Math.PI/180),ky=110950,seen=new Set(),out=[],m=(SURR_R+50)/ky;
+// est0・R0 を渡すと、ツアー以外（広告風画像）でも使える
+function surrUpdate(est0,R0){const R=R0||SURR_R;if((!TR&&!est0)||!R||!map.getSource('gsibv'))return;const est=est0||TR.list[TR.i],b=bboxOf(est.geometry);
+ const kx=111320*Math.cos(b[1]*Math.PI/180),ky=110950,seen=new Set(),out=[],m=(R+50)/ky;
  // まわりの住宅（団地）の敷地も含めて、市営住宅の住棟は除く（地図の住棟と重ならないように）
  const near=D.e.features.filter(f=>{const q=f.bb||(f.bb=bboxOf(f.geometry));return q[0]<b[2]+m*1.3&&q[2]>b[0]-m*1.3&&q[1]<b[3]+m&&q[3]>b[1]-m});
  for(const f of map.querySourceFeatures('gsibv',{sourceLayer:'building'})){const g=f.geometry;if(g.type!=='Polygon'&&g.type!=='MultiPolygon')continue;
   const r=g.type==='Polygon'?g.coordinates[0]:g.coordinates[0][0];if(!r||r.length<3)continue;
   const c=[r.reduce((a,p)=>a+p[0],0)/r.length,r.reduce((a,p)=>a+p[1],0)/r.length];
-  const dx=Math.max(b[0]-c[0],0,c[0]-b[2])*kx,dy=Math.max(b[1]-c[1],0,c[1]-b[3])*ky;if(Math.hypot(dx,dy)>SURR_R)continue;
+  const dx=Math.max(b[0]-c[0],0,c[0]-b[2])*kx,dy=Math.max(b[1]-c[1],0,c[1]-b[3])*ky;if(Math.hypot(dx,dy)>R)continue;
   if(near.some(f=>inPoly(c,f.geometry)))continue;
   const key=f.properties.ftCode+'|'+c[0].toFixed(6)+'|'+c[1].toFixed(6)+'|'+r.length;if(seen.has(key))continue;seen.add(key);
   out.push({type:'Feature',properties:{h:surrH(f.properties.ftCode)},geometry:g})}
@@ -629,7 +673,7 @@ function envUpdate(){if(!envOn||TR)return;const z=map.getZoom();tq('envZoom').te
 let envDeb=null;const envSoon=()=>{clearTimeout(envDeb);envDeb=setTimeout(envUpdate,500)};
 map.on('moveend',envSoon);map.on('sourcedata',e=>{if(envOn&&!TR&&e.sourceId==='gsibv'&&e.isSourceLoaded)envSoon()});
 document.getElementById('env').onchange=e=>{envOn=e.target.checked;tq('envNote').hidden=!envOn;if(TR)return;surrLoad(envOn);if(envOn)envUpdate();else envClear()};
-function tourStart(list,one){if(!list.length)return;closeSide();document.body.classList.add('touring');
+function tourStart(list,one){if(!list.length)return;closeSide();if(HKS)hkClose();document.body.classList.add('touring');
  envClear();TR={list,i:0,one,spin:false,play:true,t:0,tok:0,last:0,b0:0,su:0};surrLoad(SURR_R>0);tq('tbar').hidden=false;tourShow();tourGo(0)}
 function tourEnd(){if(!TR)return;TR.tok++;TR=null;surrLoad(envOn);surrClear();poiClear();envSoon();document.body.classList.remove('touring','rec');tq('tbar').hidden=true;tq('tcard').hidden=true;tq('telop').hidden=true;tq('recX').hidden=true;setSelE(null);
  map.easeTo({pitch:45,padding:{top:0,bottom:0,left:0,right:0},duration:600});updEstLabels();updNumLabels()}
@@ -662,4 +706,6 @@ tq('tGo').onclick=()=>tourStart(tourList(),false);
 addEventListener('keydown',e=>{if(!TR||['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;
  if(e.key==='Escape'){if(document.body.classList.contains('rec'))tq('recX').click();else tourEnd()}else if(e.key===' '){e.preventDefault();tq('tPlay').click()}else if(e.key==='ArrowRight')tq('tNext').click();else if(e.key==='ArrowLeft')tq('tPrev').click()});
 </script>
+<script src="js/hikage.js"></script>
+<script src="js/koukoku.js"></script>
 </body></html>
