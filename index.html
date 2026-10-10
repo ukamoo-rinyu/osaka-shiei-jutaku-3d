@@ -123,6 +123,11 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .hkbox .x{border:0;background:none;font-size:18px;cursor:pointer;color:var(--muted);padding:0 4px}
 .hklab{font:700 11px/1 var(--font-num,system-ui);background:rgb(255 255 255 / .9);border:1.5px solid;border-radius:4px;padding:2px 4px;pointer-events:none;white-space:nowrap}.hklab.s{font-size:10px;font-weight:600;border-width:1px;padding:1px 3px}
 @media (max-width:640px){.hkbox{top:8px;font-size:12px}}
+/* 施設名の読み込み中 */
+.ovpload{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:45;display:flex;gap:8px;align-items:center;background:rgb(20 26 36 / .88);color:#fff;font-size:12.5px;padding:7px 14px;border-radius:999px;box-shadow:0 2px 10px rgb(0 0 0 / .25);white-space:nowrap;pointer-events:none}
+.ovpload i{width:12px;height:12px;border-radius:50%;border:2px solid rgb(255 255 255 / .35);border-top-color:#fff;animation:ovpspin .8s linear infinite}
+@keyframes ovpspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ovpload i{animation:none}}
 /* 広告風画像メーカー */
 .adbox{position:fixed;inset:0;z-index:40;background:rgb(10 14 22 / .78);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
 .adbox .in{background:var(--panel);color:var(--ink);border-radius:14px;max-width:1100px;width:100%;max-height:100%;overflow:auto;padding:12px 14px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;font-size:12.5px}
@@ -191,6 +196,7 @@ body.rec .tcard{width:340px}body.rec .tcard h2{font-size:24px}
  <div class="row"><button type="button" class="btn" id="adL">⟲ 向きを変える</button><button type="button" class="btn" id="adR">向きを変える ⟳</button><button type="button" class="btn" id="adRe">撮り直す</button><button type="button" class="btn pri" id="adSave">画像を保存（PNG）</button></div>
  <div style="color:var(--muted);font-size:11px">地図をその場で撮影して作ります。施設名は地理院地図と OpenStreetMap から自動で選ぶので、抜けや古い名前があることがあります。できた画像には「イメージ画像で、実在の広告・入居募集とは関係ない」旨の注意書きが入ります。</div>
 </div></div>
+<div class="ovpload" id="ovpLoad" hidden role="status"><i></i>周辺の施設名（OpenStreetMap）を読み込み中…</div>
 <div class="hkbox" id="hkBox" hidden role="dialog" aria-label="日影図">
  <h3><span>日影図：<b id="hkTtl"></b></span><button type="button" class="x" id="hkX" aria-label="日影図を閉じる">×</button></h3>
  <div class="row"><label>測定面の高さ <select id="hkMh"><option value="0">0 m（地面）</option><option value="1.5">1.5 m</option><option value="4" selected>4 m</option><option value="6.5">6.5 m</option></select></label>
@@ -342,7 +348,7 @@ function legend(){
  document.getElementById('cNone').onclick=()=>{ON[mode].clear();apply(false)};
  const th=document.getElementById('rbTh');if(th)th.onchange=()=>{RBTH=+th.value;ALL.forEach(f=>f.properties.kb=RBB(f.properties));map.getSource('b').setData(D.b);map.getSource('p').setData(D.p);apply(false)};
 }
-const map=new maplibregl.Map({container:'map',center:[135.505,34.675],zoom:11.3,pitch:0,bearing:0,maxPitch:75,attributionControl:false,locale:{'GeolocateControl.FindMyLocation':'現在地を表示','GeolocateControl.LocationNotAvailable':'現在地を取得できません'},
+const map=new maplibregl.Map({container:'map',center:[135.505,34.675],zoom:11.3,pitch:0,bearing:0,maxPitch:75,attributionControl:false,preserveDrawingBuffer:true,locale:{'GeolocateControl.FindMyLocation':'現在地を表示','GeolocateControl.LocationNotAvailable':'現在地を取得できません'},
  style:{version:8,sources:{gsi:{type:'raster',tiles:['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],tileSize:256,maxzoom:18,attribution:'地理院タイル（淡色地図）'},photo:{type:'raster',tiles:['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],tileSize:256,maxzoom:18,attribution:'地理院タイル（全国最新写真〈シームレス〉）'}},
   layers:[{id:'bg',type:'background',paint:{'background-color':css('--ground')}},{id:'gsi',type:'raster',source:'gsi',paint:{'raster-opacity':.35,'raster-brightness-max':dark()?.42:1,'raster-saturation':dark()?-.6:-.2}},{id:'photo',type:'raster',source:'photo',layout:{visibility:'none'},paint:{'raster-opacity':.85}}]}});
 let tileErr=false;map.on('error',e=>{if((e.sourceId==='gsi'||e.sourceId==='photo')&&!tileErr){tileErr=true;document.getElementById('bmNote').hidden=false}});
@@ -606,7 +612,11 @@ const POI_CAT=t=>{const a=t.amenity,b=t.building;
 const OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 let OSM_FAIL=false;
 const osmQ=a=>`[out:json][timeout:25];(nwr${a}[name][amenity];nwr${a}[name][office];nwr${a}[name][building];nwr${a}[name][leisure=park];nwr${a}[name][railway=station];nwr${a}[name][public_transport=station];nwr${a}[name][shop~"^(mall|department_store|supermarket)$"];);out center 400;`;
-async function overpass(q){for(const u of OVERPASS){try{const r=await fetch(u+'?data='+encodeURIComponent(q));if(!r.ok)continue;const j=await r.json();OSM_FAIL=false;return j.elements||[]}catch(e){}}OSM_FAIL=true;throw new Error('overpass')}
+// 読み込み中は画面上に「施設名を読み込み中…」を出す（同時にいくつ待っているかを数える）。1か所につき20秒で諦めて次へ
+let OVP_N=0;const ovpShow=()=>{const el=tq('ovpLoad');if(el)el.hidden=OVP_N<=0};
+async function overpass(q){OVP_N++;ovpShow();try{for(const u of OVERPASS){const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),20000);
+ try{const r=await fetch(u+'?data='+encodeURIComponent(q),{signal:ac.signal});if(!r.ok)continue;const j=await r.json();OSM_FAIL=false;return j.elements||[]}catch(e){}finally{clearTimeout(tm)}}
+ OSM_FAIL=true;throw new Error('overpass')}finally{OVP_N--;ovpShow()}}
 const osmItem=x=>{const t=x.tags||{},ll=x.type==='node'?[x.lon,x.lat]:x.center?[x.center.lon,x.center.lat]:null,cat=POI_CAT(t);return t.name&&ll&&cat?{nm:t.name,ll,cat,osm:1}:null};
 const GSI_PUB=/(小学校|中学校|高等学校|高校|学校|学園|大学|幼稚園|保育園|保育所|こども園|病院|医院|クリニック|役所|区役所|出張所|警察署|交番|消防署|出張所|図書館|郵便局|会館|センター|公民館|体育館|プール|老人|福祉|保健|市役所|府庁|裁判所|税務署|ホール)/;
 function gsiItems(bb){const out=[];
