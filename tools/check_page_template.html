@@ -225,11 +225,22 @@ function renderList(){const q=nz(document.getElementById('q').value),fk=document
  document.querySelectorAll('#list button').forEach(b=>b.onclick=()=>{go(+b.dataset.i);document.getElementById('aside').classList.remove('open')});
  document.getElementById('pDone').textContent=E.filter(isDone).length;document.getElementById('pAll').textContent=E.length;
  {const n=E.reduce((a,e)=>a+nChg(e),0),d=E.filter(isDone).length;document.getElementById('pChg').textContent=n;const r=n||d?rows().length-1:0;document.getElementById('expN').textContent=r?`（${r}件）`:''}}
-const map=new maplibregl.Map({container:'map',center:[135.5,34.67],zoom:16,pitch:0,bearing:0,maxPitch:75,attributionControl:false,
+const map=new maplibregl.Map({container:'map',center:[135.5,34.67],zoom:16,pitch:0,bearing:0,maxPitch:75,attributionControl:false,locale:{'GeolocateControl.FindMyLocation':'現在地を表示','GeolocateControl.LocationNotAvailable':'現在地を取得できません'},
  style:{version:8,sources:{gsi:{type:'raster',tiles:['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],tileSize:256,maxzoom:18,attribution:'地理院タイル（淡色地図）'},
   photo:{type:'raster',tiles:['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],tileSize:256,maxzoom:18,attribution:'地理院タイル（全国最新写真）'}},
  layers:[{id:'bg',type:'background',paint:{'background-color':css('--bg')}},{id:'gsi',type:'raster',source:'gsi',paint:{'raster-opacity':.55}},{id:'photo',type:'raster',source:'photo',layout:{visibility:'none'}}]}});
 map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+// 現在地（スマホやPCの位置情報を使う。初めて押したときにブラウザが許可を聞く。位置はこの画面の中だけで使い、どこにも送らない）
+const geo=new maplibregl.GeolocateControl({positionOptions:{enableHighAccuracy:true,timeout:15000},trackUserLocation:true,showAccuracyCircle:true,fitBoundsOptions:{maxZoom:17}});
+map.addControl(geo,'top-right');
+function geoMsg(code){const t=document.createElement('div');t.setAttribute('role','status');
+ t.style.cssText='position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:50;max-width:calc(100% - 32px);padding:9px 14px;border-radius:8px;background:rgba(30,34,40,.92);color:#fff;font-size:12.5px;line-height:1.6;box-shadow:0 2px 10px rgba(0,0,0,.25)';
+ t.textContent=code===1?'現在地を使う許可がありません。ブラウザやスマホの設定で、このページに位置情報の利用を許可してください。':'現在地を取得できませんでした。電波のよい場所で、もう一度押してください。';
+ document.body.appendChild(t);setTimeout(()=>t.remove(),6000)}
+geo.on('error',e=>geoMsg(e.code));
+// 位置情報を拒否済みだとボタンが押せなくなるので、押せるようにして理由を出す
+navigator.permissions?.query({name:'geolocation'}).then(s=>{if(s.state!=='denied')return;setTimeout(()=>{const bt=document.querySelector('.maplibregl-ctrl-geolocate');if(!bt)return;
+ bt.disabled=false;bt.title='現在地を表示（位置情報の許可が必要です）';bt.setAttribute('aria-label',bt.title);bt.addEventListener('click',ev=>{ev.stopImmediatePropagation();geoMsg(1)},true)},500)}).catch(()=>{});
 class BtnCtl{constructor(lab,fn){this.lab=lab;this.fn=fn}onAdd(m){const c=document.createElement('div');c.className='maplibregl-ctrl maplibregl-ctrl-group';const b=document.createElement('button');b.type='button';b.style.cssText='font:700 11px var(--font-ui);width:29px;height:29px;color:#333';b.title=this.lab[1];b.textContent=this.lab[0];b.onclick=()=>this.fn(b,m);c.appendChild(b);return c}onRemove(){}}
 map.addControl(new BtnCtl(['3D','2D/3Dの切り替え'],(b,m)=>{const to3=m.getPitch()<=5;m.easeTo(to3?{pitch:55}:{pitch:0,bearing:0});b.textContent=to3?'2D':'3D'}),'top-right');
 // 背景地図の切り替え（地図／航空写真）。選んだほうはこのブラウザに覚えておく
