@@ -39,6 +39,8 @@ h1{font-size:17px;margin:0;letter-spacing:.02em;text-wrap:balance}
 .seg button+button{border-left:1px solid var(--line)}
 .sec .seg:has(#mRb){display:grid;grid-template-columns:repeat(4,1fr)}
 .seg:has(#mRb) button{border-top:1px solid var(--line)}.seg:has(#mRb) button:nth-child(-n+4){border-top:0}.seg:has(#mRb) button:nth-child(4n+1){border-left:0}
+/* ボタンが7つで2段目の右端が空くので、空きマスにも区切り線を引く */
+.seg:has(#mRb)::after{content:'';border-top:1px solid var(--line);border-left:1px solid var(--line)}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--panel);font-weight:700}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 select{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);flex:1;min-width:0}
