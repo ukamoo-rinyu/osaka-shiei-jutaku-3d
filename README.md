@@ -10,6 +10,7 @@
 - 住棟マスタ：`data/shiei_jutaku_master.csv`（住棟ごとの建設年度・築年数・耐震性・活用手法・PLATEAU建物ID・高さ・浸水深など）
 - 入居募集対象空家：`data/shiei_jutaku_boshu_R080701.csv`（市営住宅一覧〈各区別〉R8.7.1 の住宅ごとの管理戸数・入居手続中等・募集中・募集準備中・入居募集対象外空家・備考。対応づけの根拠は `tools/boshu_r080701_map.py`、地図への反映は `tools/build_boshu.py`）
 - 交通（最寄り駅・バス停）：`data/shiei_jutaku_kotsu_R080701.csv`（市営住宅一覧〈各区別〉R8.7.1 の「交通機関」欄を PDF の画像から読み取ったもの。読み取り結果は `tools/kotsu_r080701_transcribed.py`、地図への反映は `tools/build_kotsu.py`）
+- 市会の契約議案：`data/shiei_keiyaku_gikai.csv`（大阪市会に出された市営住宅の建設工事請負契約の議案〈締結・一部変更〉。工事名・工事概要・契約の相手方〈業者〉・契約金額・しゅん工期限・工事場所。いまは令和6年2・3月、令和6年9・10月、令和7年2・3月、令和8年2・3月の市会の24件。地図への反映は `tools/build_keiyaku.py`。看板より新しい情報として優先し、しゅん工期限がまだ先なら「建替工事中・予定」にする）
 - 建築計画のお知らせ看板：`data/kanban_shiei_kdb.csv`（「建築計画のお知らせ看板情報」kdb.tokyo 大阪の検索結果から、市営住宅の建替とみられる49件を抜き出し、マップの住宅に対応づけたもの。地図への反映は `tools/build_kanban.py`）
 - 浸水リスク一覧：`data/shiei_jutaku_flood_risk.csv`（上と同じ内容を浸水深の深い順に並べたもの）
 - 確認用ツール：`tools/`（PLATEAU建物との対応づけを目視で確認・補正するために使ったHTMLと、確認・報告ページを作るスクリプト）
