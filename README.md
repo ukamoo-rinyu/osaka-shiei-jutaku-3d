@@ -12,6 +12,7 @@
 - 交通（最寄り駅・バス停）：`data/shiei_jutaku_kotsu_R080701.csv`（市営住宅一覧〈各区別〉R8.7.1 の「交通機関」欄を PDF の画像から読み取ったもの。読み取り結果は `tools/kotsu_r080701_transcribed.py`、地図への反映は `tools/build_kotsu.py`）
 - 市会の契約議案：`data/shiei_keiyaku_gikai.csv`（大阪市会に出された市営住宅の建設工事請負契約の議案〈締結・一部変更〉。工事名・工事概要・契約の相手方〈業者〉・契約金額・しゅん工期限・工事場所。いまは令和6年2・3月、令和6年9・10月、令和7年2・3月、令和8年2・3月の市会の24件。地図への反映は `tools/build_keiyaku.py`。看板より新しい情報として優先し、しゅん工期限がまだ先なら「建替工事中・予定」にする）
 - 複合（同じ建物の市有施設）：`data/shiei_fukugo_kokyo.csv`（公共施設マップ〈osaka-facilities-v2〉の `facilities.json` の市有施設と住棟を、住所・位置で突き合わせたもの。確度 a：住所が号まで一致／b：番まで一致し施設の位置が建物から30m以内／c：番まで一致し80m以内〈要確認〉。公園・霊園・渡船場・駐輪場の管理事務所は除く。突き合わせは `tools/fukugo_match.py`、地図への反映は `tools/build_fukugo.py`）
+- 道路の幅：`data/shiei_road_width.csv`（osaka-road-width の `docs/layers.js`〈国土数値情報 N13 の道路に、基盤地図情報の道路縁から実測した全幅を足したもの〉から、住宅〈団地〉の敷地の点線から「12m＋道路の幅の半分」以内を通る道路を拾ったもの。実測できなかった道路は N13 の幅員区分。拾うのは `tools/road_match.py`、地図への反映は `tools/build_road.py`）
 - 建築計画のお知らせ看板：`data/kanban_shiei_kdb.csv`（「建築計画のお知らせ看板情報」kdb.tokyo 大阪の検索結果から、市営住宅の建替とみられる49件を抜き出し、マップの住宅に対応づけたもの。地図への反映は `tools/build_kanban.py`）
 - 浸水リスク一覧：`data/shiei_jutaku_flood_risk.csv`（上と同じ内容を浸水深の深い順に並べたもの）
 - 確認用ツール：`tools/`（PLATEAU建物との対応づけを目視で確認・補正するために使ったHTMLと、確認・報告ページを作るスクリプト）
