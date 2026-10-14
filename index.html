@@ -99,6 +99,15 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .info h2{font-size:15px;margin:0 22px 8px 0;line-height:1.4}
 .info dl{display:grid;grid-template-columns:fit-content(9.5em) minmax(0,1fr);gap:3px 12px;margin:0;font-size:12.5px}
 .info dt{color:var(--muted)}.info dd{margin:0;min-width:0;overflow-wrap:anywhere}
+/* 絞り込み中の項目の強調 */
+dl dt.hl,dl dd.hl{background:color-mix(in srgb,var(--sel-line) 10%,transparent);padding-top:2px;padding-bottom:2px}
+dl dt.hl{color:var(--ink)!important;font-weight:700;box-shadow:inset 3px 0 0 var(--sel-line);padding-left:6px;border-radius:3px 0 0 3px}
+dl dd.hl{border-radius:0 3px 3px 0;padding-right:4px}
+.fchip{display:flex;width:fit-content;align-items:center;gap:4px;margin:0 0 2px;padding:1px 7px 1px 4px;border-radius:999px;border:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.5;max-width:100%}
+.fchip.on{border-color:var(--sel-line);color:var(--ink);font-weight:700}
+.fchip i{width:10px;height:10px;border-radius:2px;flex:none}
+.fnote{margin:6px 0 8px;padding:6px 8px;border-radius:6px;background:color-mix(in srgb,var(--sel-line) 8%,transparent);border-left:3px solid var(--sel-line);font-size:11.5px;line-height:1.5}
+.fnote.out b{color:var(--sel-line)}
 .info .links{display:flex;gap:12px;font-size:12.5px;margin-top:8px}.info a{color:var(--accent)}
 .wlab{font-size:12px;font-weight:700;color:var(--ink);text-shadow:0 0 3px var(--bg),0 0 3px var(--bg),0 0 3px var(--bg);pointer-events:none;white-space:nowrap;opacity:.8}
 @media (max-width:640px){
@@ -463,23 +472,50 @@ function apply(fit=true){
  document.getElementById('sN').textContent=all.length.toLocaleString();
  document.getElementById('sU').textContent=all.reduce((s,x)=>s+(x.properties.u||0),0).toLocaleString();
  document.getElementById('sA').textContent=ages.length?(ages.reduce((a,b)=>a+b,0)/ages.length).toFixed(1)+'年':'–';
- legend();updEstLabels();if(typeof updNumLabels==='function')updNumLabels();
+ legend();updEstLabels();if(typeof updNumLabels==='function')updNumLabels();if(MARK&&(sel||selE!=null))markRows(...MARK);
  if(fit&&k){const src=ALL.filter(x=>x.properties.k===k);const bb=src.reduce((b,x)=>{const p=x.properties;return[Math.min(b[0],p.lon),Math.min(b[1],p.lat),Math.max(b[2],p.lon),Math.max(b[3],p.lat)]},[999,999,-999,-999]);
    if(bb[0]<999)map.fitBounds(bb,{padding:{top:60,bottom:60,left:innerWidth>640?360:40,right:innerWidth>640?340:40},pitch:map.getPitch(),maxZoom:15.5,duration:800})}
 }
 function recolor(){map.setPaintProperty('surr','fill-extrusion-color',css('--surr'));map.setPaintProperty('selLine','line-color',css('--sel-line'));map.setPaintProperty('selHalo','circle-stroke-color',css('--sel-line'));
  map.setPaintProperty('ef','fill-color',css('--estate'));map.setPaintProperty('el','line-color',['case',['boolean',['feature-state','sel'],false],css('--sel-line'),css('--estate')]);
- map.setPaintProperty('bx','fill-extrusion-color',selColor());map.setPaintProperty('pt','fill-extrusion-color',selColor());legend()}
+ map.setPaintProperty('bx','fill-extrusion-color',selColor());map.setPaintProperty('pt','fill-extrusion-color',selColor());legend();if(MARK&&(sel||selE!=null))markRows(...MARK)}
 function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+// 色分け・絞り込みしている項目を、詳細の表で強調する
+// 項目（dt の書き出し）→ 色分けの種類
+const ROWM={age:['建設年度','築年数'],meth:['活用手法'],seis:['耐震性'],flood:['浸水深','浸水が及ぶ階の目安'],boshu:['入居募集対象空家'],rb:['建替候補の目安'],kotsu:['交通'],fuku:['同じ建物の施設']};
+let MARK=null;
+function markRows(p,k){
+ MARK=[p,k??p?.k];const root=document.getElementById(innerWidth>640?'sideBody':'detail'),dl=root.querySelector('dl');if(!dl)return;
+ root.querySelectorAll('.fnote,.fchip').forEach(x=>x.remove());dl.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));
+ const on=Object.keys(CAT).filter(m=>ON[m].size<CAT[m].items.length),dts=[...dl.querySelectorAll('dt')];
+ const mark=(m,filtered)=>{let first=true;for(const dt of dts){if(!ROWM[m].some(t=>dt.textContent.startsWith(t)))continue;const dd=dt.nextElementSibling;
+   if(filtered){dt.classList.add('hl');dd.classList.add('hl')}
+   if(first&&p){const it=CAT[m].items.find(i=>i[0]===p[CAT[m].prop]);if(it)dd.insertAdjacentHTML('afterbegin',`<span class="fchip${filtered?' on':''}"><i style="background:var(${it[1]})"></i>${filtered?'絞り込み中':'色分け'}：${esc(it[2])}</span>`)}
+   first=false}};
+ for(const m of Object.keys(CAT))if(m===mode||on.includes(m))mark(m,on.includes(m));
+ const ku=kuSel.value;if(ku){const dt=dts.find(d=>d.textContent==='区');if(dt){dt.classList.add('hl');dt.nextElementSibling.classList.add('hl')}}
+ const names=[...(ku?['区（'+ku+'）']:[]),...on.map(m=>NAME[m]),...(document.getElementById('fl').checked?['確認で修正した住棟だけ']:[])];
+ if(!names.length)return;
+ const out=p&&!(passCat(p)&&(!ku||p.k===ku)&&(!document.getElementById('fl').checked||(p.rv||'').includes('修正')));
+ dl.insertAdjacentHTML('beforebegin',`<p class="fnote${out?' out':''}">絞り込み中：${esc(names.join('・'))}（該当する項目を強調しています）${out?'<br><b>この住棟はいまの絞り込みの対象外なので、地図では表示されていません。</b>':''}</p>`)}
 function clearSel(){if(sel)sel.forEach(x=>map.setFeatureState(x,{sel:false}));sel=null;setSelE(null);map.getSource('sel').setData({type:'FeatureCollection',features:[]})}
-function show(html,lon,lat,title){
- const det=document.getElementById('detail');
- if(innerWidth>640){
+// 検索で選んだときは true にする（地図をその住棟・住宅に寄せる）
+let FOCUS=false;
+// 形（Polygon/MultiPolygon の配列）を囲む範囲
+const bbOf=gs=>gs.reduce((b,g)=>{(g.type==='Polygon'?[g.coordinates]:g.coordinates).forEach(p=>p[0].forEach(([x,y])=>{b[0]=Math.min(b[0],x);b[1]=Math.min(b[1],y);b[2]=Math.max(b[2],x);b[3]=Math.max(b[3],y)}));return b},[999,999,-999,-999]);
+function show(html,lon,lat,title,bb,maxZ=17){
+ const det=document.getElementById('detail'),wide=innerWidth>640,focus=FOCUS;FOCUS=false;
+ if(wide){
    det.innerHTML='<p class="empty">選択中：<b>'+esc(title)+'</b>（詳細は画面右側）</p>';
    document.getElementById('sideBody').innerHTML=html;document.getElementById('side').hidden=false;
-   map.easeTo({center:[lon,lat],offset:[0,60],zoom:Math.max(map.getZoom(),15.3),duration:700});
  }else{det.innerHTML=html;det.classList.add('info');document.getElementById('panel').classList.remove('min');det.scrollIntoView({block:'nearest'})}
  bindList();
+ if(focus&&bb&&bb[0]<999){
+   // パネルに隠れない範囲に収まるように寄せる（スマホは画面下のパネルの上、パソコンは左右のパネルの間）
+   const pt=document.getElementById('panel').getBoundingClientRect().top;
+   const pad=wide?{top:60,bottom:60,left:370,right:380}:{top:50,bottom:Math.max(60,innerHeight-pt+20),left:30,right:30};
+   map.fitBounds(bb,{padding:pad,maxZoom:maxZ,pitch:map.getPitch(),bearing:map.getBearing(),duration:900});
+ }else if(wide)map.easeTo({center:[lon,lat],offset:[0,60],zoom:Math.max(map.getZoom(),15.3),duration:700});
 }
 function bindList(){document.querySelectorAll('[data-fid]').forEach(b=>b.onclick=()=>{const f=ALL[+b.dataset.fid];pick(f,D.b.features.includes(f)?'b':'p')})}
 // 号館の建物がいくつかに分かれていても（エキスパンションなど）、まとめて1つの画面に出す
@@ -507,7 +543,7 @@ function pick(f,src){
  show(`<span class="eyebrow">選択中の住棟</span><h2>${esc(p.n)}</h2><dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1]).replace(/\n/g,'<br>')}</dd>`).join('')}</dl>${det}${sib}
  <div class="links"><a href="https://maps.gsi.go.jp/#18/${p.lat}/${p.lon}/&base=ort" target="_blank" rel="noopener">地理院地図（航空写真）</a><a href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank" rel="noopener">Googleマップ</a></div>
  <div class="tools"><span class="tl">この号館で見る</span><div class="tg"><button type="button" class="tool" id="hkOne"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>この号館の日影図</button></div></div>
- ${chkLink(p.k,p.g,p.n,src==='p')}`,p.lon,p.lat,p.n);
+ ${chkLink(p.k,p.g,p.n,src==='p')}`,p.lon,p.lat,p.n,bbOf(parts.map(x=>x.geometry)));markRows(p);
  const t=document.getElementById('toEst');if(t)t.onclick=()=>pickEstate(p.k,p.g);
  document.getElementById('hkOne').onclick=()=>hkOpen(p.k,p.g,p.n);
 }
@@ -521,7 +557,7 @@ function pickEstate(k,g){
  <span class="lbl">住棟（クリックで選択）</span><ul class="blist">${mem.map(f=>`<li><button type="button" data-fid="${f.id}"><span class="sw" style="background:var(${col(f)})"></span>${esc(f.properties.n.replace(g,''))}<span style="margin-left:auto;color:var(--muted)">${f.properties.y||'–'}・${f.properties.u||'–'}戸</span></button></li>`).join('')}</ul>
  <div class="links"><a href="https://maps.gsi.go.jp/#17/${e.lat}/${e.lon}/&base=ort" target="_blank" rel="noopener">地理院地図（航空写真）</a><a href="https://www.google.com/maps?q=${e.lat},${e.lon}" target="_blank" rel="noopener">Googleマップ</a></div>
  <div class="tools"><span class="tl">この住宅で見る・作る</span><div class="tg"><button type="button" class="tool" id="hkAll"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>住宅全体の日影図</button><button type="button" class="tool" id="orbitOne"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>この住宅を1周見る</button><button type="button" class="tool" id="adMake"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 20V9l4-3 4 3v11"/><path d="M3 16l4-3 3 2"/></svg>広告風の画像を作る</button></div></div>
- ${chkLink(k,g)}`,e.lon,e.lat,g);
+ ${chkLink(k,g)}`,e.lon,e.lat,g,bbOf([est.geometry]),16.8);markRows(null,k);
  document.getElementById('orbitOne').onclick=()=>tourStart([est],true);
  document.getElementById('hkAll').onclick=()=>hkOpen(k,g);document.getElementById('adMake').onclick=()=>adOpen(est);
 }
@@ -558,6 +594,7 @@ function qRun(){const words=qEl.value.split(/[\s　]+/).map(nz).filter(Boolean);
  qRes.hidden=false;qRes.querySelectorAll('button').forEach(b=>b.onmousedown=e=>{e.preventDefault();qGo(+b.dataset.i)})}
 function qGo(i){const x=qHits[i];if(!x)return;qRes.hidden=true;qEl.blur();
  if(kuSel.value&&kuSel.value!==x.k){kuSel.value='';apply(false)}
+ FOCUS=true;
  if(x.t==='e')pickEstate(x.k,x.name);else pick(x.f,D.b.features.includes(x.f)?'b':'p')}
 qEl.oninput=qRun;qEl.onfocus=qRun;qEl.onblur=()=>setTimeout(()=>qRes.hidden=true,150);
 qEl.onkeydown=e=>{const bs=qRes.querySelectorAll('button');
