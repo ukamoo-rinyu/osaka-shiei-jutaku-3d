@@ -99,15 +99,10 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .info h2{font-size:15px;margin:0 22px 8px 0;line-height:1.4}
 .info dl{display:grid;grid-template-columns:fit-content(9.5em) minmax(0,1fr);gap:3px 12px;margin:0;font-size:12.5px}
 .info dt{color:var(--muted)}.info dd{margin:0;min-width:0;overflow-wrap:anywhere}
-/* 絞り込み中の項目の強調 */
-dl dt.hl,dl dd.hl{background:color-mix(in srgb,var(--sel-line) 10%,transparent);padding-top:2px;padding-bottom:2px}
-dl dt.hl{color:var(--ink)!important;font-weight:700;box-shadow:inset 3px 0 0 var(--sel-line);padding-left:6px;border-radius:3px 0 0 3px}
-dl dd.hl{border-radius:0 3px 3px 0;padding-right:4px}
-.fchip{display:flex;width:fit-content;align-items:center;gap:4px;margin:0 0 2px;padding:1px 7px 1px 4px;border-radius:999px;border:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.5;max-width:100%}
-.fchip.on{border-color:var(--sel-line);color:var(--ink);font-weight:700}
-.fchip i{width:10px;height:10px;border-radius:2px;flex:none}
-.fnote{margin:6px 0 8px;padding:6px 8px;border-radius:6px;background:color-mix(in srgb,var(--sel-line) 8%,transparent);border-left:3px solid var(--sel-line);font-size:11.5px;line-height:1.5}
-.fnote.out b{color:var(--sel-line)}
+/* 絞り込み中の項目の値（黄色のマーカー） */
+span.mk{background:linear-gradient(transparent 55%,rgb(255 226 77 / .75) 55%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+:root[data-theme="dark"] span.mk{background:linear-gradient(transparent 55%,rgb(255 214 0 / .35) 55%)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) span.mk{background:linear-gradient(transparent 55%,rgb(255 214 0 / .35) 55%)}}
 .info .links{display:flex;gap:12px;font-size:12.5px;margin-top:8px}.info a{color:var(--accent)}
 .wlab{font-size:12px;font-weight:700;color:var(--ink);text-shadow:0 0 3px var(--bg),0 0 3px var(--bg),0 0 3px var(--bg);pointer-events:none;white-space:nowrap;opacity:.8}
 @media (max-width:640px){
@@ -480,24 +475,16 @@ function recolor(){map.setPaintProperty('surr','fill-extrusion-color',css('--sur
  map.setPaintProperty('ef','fill-color',css('--estate'));map.setPaintProperty('el','line-color',['case',['boolean',['feature-state','sel'],false],css('--sel-line'),css('--estate')]);
  map.setPaintProperty('bx','fill-extrusion-color',selColor());map.setPaintProperty('pt','fill-extrusion-color',selColor());legend();if(MARK&&(sel||selE!=null))markRows(...MARK)}
 function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-// 色分け・絞り込みしている項目を、詳細の表で強調する
+// 絞り込みしている項目の値に黄色のマーカーを引く
 // 項目（dt の書き出し）→ 色分けの種類
 const ROWM={age:['建設年度','築年数'],meth:['活用手法'],seis:['耐震性'],flood:['浸水深','浸水が及ぶ階の目安'],boshu:['入居募集対象空家'],rb:['建替候補の目安'],kotsu:['交通'],fuku:['同じ建物の施設']};
 let MARK=null;
 function markRows(p,k){
  MARK=[p,k??p?.k];const root=document.getElementById(innerWidth>640?'sideBody':'detail'),dl=root.querySelector('dl');if(!dl)return;
- root.querySelectorAll('.fnote,.fchip').forEach(x=>x.remove());dl.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));
+ dl.querySelectorAll('span.mk').forEach(x=>x.replaceWith(...x.childNodes));
  const on=Object.keys(CAT).filter(m=>ON[m].size<CAT[m].items.length),dts=[...dl.querySelectorAll('dt')];
- const mark=(m,filtered)=>{let first=true;for(const dt of dts){if(!ROWM[m].some(t=>dt.textContent.startsWith(t)))continue;const dd=dt.nextElementSibling;
-   if(filtered){dt.classList.add('hl');dd.classList.add('hl')}
-   if(first&&p){const it=CAT[m].items.find(i=>i[0]===p[CAT[m].prop]);if(it)dd.insertAdjacentHTML('afterbegin',`<span class="fchip${filtered?' on':''}"><i style="background:var(${it[1]})"></i>${filtered?'絞り込み中':'色分け'}：${esc(it[2])}</span>`)}
-   first=false}};
- for(const m of Object.keys(CAT))if(m===mode||on.includes(m))mark(m,on.includes(m));
- const ku=kuSel.value;if(ku){const dt=dts.find(d=>d.textContent==='区');if(dt){dt.classList.add('hl');dt.nextElementSibling.classList.add('hl')}}
- const names=[...(ku?['区（'+ku+'）']:[]),...on.map(m=>NAME[m]),...(document.getElementById('fl').checked?['確認で修正した住棟だけ']:[])];
- if(!names.length)return;
- const out=p&&!(passCat(p)&&(!ku||p.k===ku)&&(!document.getElementById('fl').checked||(p.rv||'').includes('修正')));
- dl.insertAdjacentHTML('beforebegin',`<p class="fnote${out?' out':''}">絞り込み中：${esc(names.join('・'))}（該当する項目を強調しています）${out?'<br><b>この住棟はいまの絞り込みの対象外なので、地図では表示されていません。</b>':''}</p>`)}
+ const hit=dt=>(kuSel.value&&dt.textContent==='区')||on.some(m=>ROWM[m].some(t=>dt.textContent.startsWith(t)));
+ for(const dt of dts)if(hit(dt)){const dd=dt.nextElementSibling,mk=document.createElement('span');mk.className='mk';mk.append(...dd.childNodes);dd.append(mk)}}
 function clearSel(){if(sel)sel.forEach(x=>map.setFeatureState(x,{sel:false}));sel=null;setSelE(null);map.getSource('sel').setData({type:'FeatureCollection',features:[]})}
 // 検索で選んだときは true にする（地図をその住棟・住宅に寄せる）
 let FOCUS=false;
